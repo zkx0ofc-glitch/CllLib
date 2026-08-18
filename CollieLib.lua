@@ -1,31 +1,33 @@
 --[[
     ========================================================================
-    CollieLib - UI Library (Pastel / Cartoon / Clean Edition)
+    CollieLib - UI Library (Animated Gradient & Draggable Edition)
     ========================================================================
-    Desenvolvida para Roblox UI (ScreenGui, Frame, UICorner, UIStroke, TweenService).
-    Estética: Pastel Blue, Cantos Arredondados, Animações Elásticas e Smooth.
+    Desenvolvida em OOP para Roblox UI.
+    Características: Fundo Animado (Azul Claro <-> Escuro), Sistema Draggable,
+    Toast Notifications, ColorPicker, TextBox, Keybind, Favoritos e Pesquisa.
 --]]
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 
 local CollieLib = {}
 CollieLib.__index = CollieLib
 
--- Palette de Cores Pastel / Aesthetic
+-- Paleta de Cores Padrão
 local Palette = {
-    MainBg = Color3.fromRGB(180, 210, 240),        -- Azul pastel médio
-    ContentBg = Color3.fromRGB(240, 248, 255),     -- Azul-claro suave / Quase branco
-    SidebarBg = Color3.fromRGB(160, 195, 230),     -- Azul ligeiramente mais escuro para a barra lateral
-    Accent = Color3.fromRGB(120, 180, 245),        -- Azul-bebê brilhante
-    AccentActive = Color3.fromRGB(80, 150, 235),   -- Azul ativado
-    TextPrimary = Color3.fromRGB(50, 70, 90),      -- Texto escuro suave
-    TextSecondary = Color3.fromRGB(110, 130, 150),  -- Texto secundário
-    Stroke = Color3.fromRGB(210, 230, 250),        -- Bordas suaves
+    MainBgStart = Color3.fromRGB(150, 200, 255),    -- Azul claro
+    MainBgEnd = Color3.fromRGB(40, 80, 150),        -- Azul escuro
+    ContentBg = Color3.fromRGB(240, 248, 255),      -- Suave / Quase branco
+    SidebarBg = Color3.fromRGB(130, 175, 220),      -- Azul médio sidebar
+    Accent = Color3.fromRGB(100, 170, 245),         -- Azul bebê brilhante
+    AccentActive = Color3.fromRGB(60, 130, 220),    -- Azul ativado
+    TextPrimary = Color3.fromRGB(40, 60, 80),       -- Texto escuro
+    TextSecondary = Color3.fromRGB(100, 120, 140),   -- Texto secundário
+    Stroke = Color3.fromRGB(200, 225, 255),         -- Bordas
     White = Color3.fromRGB(255, 255, 255),
     
-    -- Cores das Tags
     Tags = {
         NEW = Color3.fromRGB(100, 200, 255),
         BETA = Color3.fromRGB(180, 150, 240),
@@ -35,12 +37,11 @@ local Palette = {
     }
 }
 
--- Configurações Padrão de Animação
+-- Configurações de Animação
 local TweenInfoFast = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-local TweenInfoBounce = TweenInfo.new(0.3, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out)
 local TweenInfoElastic = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
--- Função utilitária para aplicar animações de escala e cor (Feedback Animado)
+-- Função para adicionar feedback de animação ao clicar/passar o mouse
 local function AddHoverClickFeedback(guiObject, normalSize, hoverSize, normalColor, hoverColor)
     guiObject.MouseEnter:Connect(function()
         TweenService:Create(guiObject, TweenInfoFast, {
@@ -68,7 +69,42 @@ local function AddHoverClickFeedback(guiObject, normalSize, hoverSize, normalCol
     end)
 end
 
--- Função para Criar Tag Fofinha
+-- Função para tornar um Frame arrastável (Draggable)
+local function MakeDraggable(guiObject, dragHandle)
+    local dragging, dragInput, dragStart, startPos
+    dragHandle = dragHandle or guiObject
+
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = guiObject.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    dragHandle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            TweenService:Create(guiObject, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            }):Play()
+        end
+    end)
+end
+
+-- Função de Tag Fofinha
 local function CreateTagLabel(parent, tagType)
     if not tagType or not Palette.Tags[string.upper(tagType)] then return end
     
@@ -101,12 +137,10 @@ function CollieLib:CreateWindow(title, subtitle)
     local Window = {}
     setmetatable(Window, CollieLib)
     
-    -- Criando ScreenGui Principal
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "CollieLib_UI"
     ScreenGui.ResetOnSpawn = false
     
-    -- Proteção de montagem
     if gethui then
         ScreenGui.Parent = gethui()
     elseif syn and syn.protect_gui then
@@ -121,7 +155,7 @@ function CollieLib:CreateWindow(title, subtitle)
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, 580, 0, 380)
     MainFrame.Position = UDim2.new(0.5, -290, 0.5, -190)
-    MainFrame.BackgroundColor3 = Palette.MainBg
+    MainFrame.BackgroundColor3 = Palette.MainBgStart
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
     MainFrame.Parent = ScreenGui
@@ -135,30 +169,52 @@ function CollieLib:CreateWindow(title, subtitle)
     MainStroke.Thickness = 3
     MainStroke.Parent = MainFrame
 
-    -- Barra Superior (Header)
+    -- Fundo Gradiente Animado (Azul Claro <-> Azul Escuro)
+    local UIGradient = Instance.new("UIGradient")
+    UIGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Palette.MainBgStart),
+        ColorSequenceKeypoint.new(1, Palette.MainBgEnd)
+    })
+    UIGradient.Rotation = 45
+    UIGradient.Parent = MainFrame
+
+    -- Loop de animação do gradiente
+    task.spawn(function()
+        local timeCounter = 0
+        while MainFrame and MainFrame.Parent do
+            timeCounter = timeCounter + RunService.Heartbeat:Wait()
+            local rot = (math.sin(timeCounter * 0.5) + 1) / 2 * 180
+            UIGradient.Rotation = rot
+        end
+    end)
+
+    -- Barra Superior (Header & Arrastável)
     local Header = Instance.new("Frame")
     Header.Name = "Header"
     Header.Size = UDim2.new(1, 0, 0, 45)
     Header.BackgroundTransparency = 1
     Header.Parent = MainFrame
     
+    -- Ativando Sistema Draggable no Header
+    MakeDraggable(MainFrame, Header)
+    
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Size = UDim2.new(0, 300, 0, 25)
     TitleLabel.Position = UDim2.new(0, 20, 0, 10)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = (title or "CollieLib") .. " <font color='#80B0F0'>" .. (subtitle or "v1.0") .. "</font>"
+    TitleLabel.Text = (title or "CollieLib") .. " <font color='#D0E5FF'>" .. (subtitle or "v2.0") .. "</font>"
     TitleLabel.RichText = true
-    TitleLabel.TextColor3 = Palette.TextPrimary
+    TitleLabel.TextColor3 = Palette.White
     TitleLabel.TextSize = 18
     TitleLabel.Font = Enum.Font.FredokaOne
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = Header
     
-    -- Botões Fofos de Fechar e Ocultar
+    -- Botão Fechar
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Size = UDim2.new(0, 26, 0, 26)
     CloseBtn.Position = UDim2.new(1, -36, 0, 10)
-    CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 140, 140)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 120, 120)
     CloseBtn.Text = "✕"
     CloseBtn.TextColor3 = Palette.White
     CloseBtn.Font = Enum.Font.FredokaOne
@@ -169,19 +225,20 @@ function CollieLib:CreateWindow(title, subtitle)
     CloseCorner.CornerRadius = UDim.new(1, 0)
     CloseCorner.Parent = CloseBtn
     
-    AddHoverClickFeedback(CloseBtn, UDim2.new(0, 26, 0, 26), UDim2.new(0, 28, 0, 28), Color3.fromRGB(255, 140, 140), Color3.fromRGB(255, 100, 100))
+    AddHoverClickFeedback(CloseBtn, UDim2.new(0, 26, 0, 26), UDim2.new(0, 28, 0, 28), Color3.fromRGB(255, 120, 120), Color3.fromRGB(255, 80, 80))
     CloseBtn.MouseButton1Click:Connect(function()
         TweenService:Create(MainFrame, TweenInfoFast, {Size = UDim2.new(0, 0, 0, 0)}).Completed:Connect(function()
             ScreenGui:Destroy()
         end)
     end)
     
-    -- Barra Lateral Left (Tabs)
+    -- Barra Lateral (Sidebar)
     local Sidebar = Instance.new("Frame")
     Sidebar.Name = "Sidebar"
     Sidebar.Size = UDim2.new(0, 150, 1, -55)
     Sidebar.Position = UDim2.new(0, 12, 0, 45)
     Sidebar.BackgroundColor3 = Palette.SidebarBg
+    Sidebar.BackgroundTransparency = 0.3
     Sidebar.Parent = MainFrame
     
     local SidebarCorner = Instance.new("UICorner")
@@ -198,7 +255,7 @@ function CollieLib:CreateWindow(title, subtitle)
     SidebarPadding.PaddingTop = UDim.new(0, 10)
     SidebarPadding.Parent = Sidebar
 
-    -- Container Central (Conteúdo)
+    -- Contêiner Central de Conteúdo
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Name = "ContentContainer"
     ContentContainer.Size = UDim2.new(1, -186, 1, -55)
@@ -210,25 +267,94 @@ function CollieLib:CreateWindow(title, subtitle)
     ContentCorner.CornerRadius = UDim.new(0, 16)
     ContentCorner.Parent = ContentContainer
 
-    -- Animação de Entrada
+    -- Contêiner de Notificações Toast
+    local ToastContainer = Instance.new("Frame")
+    ToastContainer.Name = "ToastContainer"
+    ToastContainer.Size = UDim2.new(0, 200, 1, -20)
+    ToastContainer.Position = UDim2.new(1, -210, 0, 10)
+    ToastContainer.BackgroundTransparency = 1
+    ToastContainer.Parent = ScreenGui
+    
+    local ToastList = Instance.new("UIListLayout")
+    ToastList.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    ToastList.Padding = UDim.new(0, 8)
+    ToastList.Parent = ToastContainer
+
+    -- Animação Inicial de Surgimento
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
     TweenService:Create(MainFrame, TweenInfoElastic, {Size = UDim2.new(0, 580, 0, 380)}):Play()
 
-    -- Referências do objeto
+    Window.ScreenGui = ScreenGui
     Window.MainFrame = MainFrame
     Window.Sidebar = Sidebar
     Window.ContentContainer = ContentContainer
+    Window.ToastContainer = ToastContainer
     Window.Tabs = {}
     Window.ActiveTab = nil
     
-    -- Sistema de Favoritos Integrado
     Window:CreateFavorites()
-    
     return Window
 end
 
 ------------------------------------------------------------------------
--- 12. SEARCH BAR (EnableSearchBar)
+-- NOVA FUNÇÃO: TOAST NOTIFICATIONS (:Notify)
+------------------------------------------------------------------------
+function CollieLib:Notify(title, message, duration)
+    duration = duration or 3
+    
+    local Toast = Instance.new("Frame")
+    Toast.Size = UDim2.new(1, 0, 0, 50)
+    Toast.BackgroundColor3 = Palette.White
+    Toast.Position = UDim2.new(1, 50, 0, 0)
+    Toast.Parent = self.ToastContainer
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 10)
+    Corner.Parent = Toast
+    
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Palette.Accent
+    Stroke.Thickness = 2
+    Stroke.Parent = Toast
+    
+    local TTitle = Instance.new("TextLabel")
+    TTitle.Size = UDim2.new(1, -16, 0, 20)
+    TTitle.Position = UDim2.new(0, 10, 0, 5)
+    TTitle.BackgroundTransparency = 1
+    TTitle.Text = title or "Notificação"
+    TTitle.TextColor3 = Palette.TextPrimary
+    TTitle.Font = Enum.Font.FredokaOne
+    TTitle.TextSize = 12
+    TTitle.TextXAlignment = Enum.TextXAlignment.Left
+    TTitle.Parent = Toast
+    
+    local TMsg = Instance.new("TextLabel")
+    TMsg.Size = UDim2.new(1, -16, 0, 20)
+    TMsg.Position = UDim2.new(0, 10, 0, 22)
+    TMsg.BackgroundTransparency = 1
+    TMsg.Text = message or ""
+    TMsg.TextColor3 = Palette.TextSecondary
+    TMsg.Font = Enum.Font.FredokaOne
+    TMsg.TextSize = 10
+    TMsg.TextXAlignment = Enum.TextXAlignment.Left
+    TMsg.Parent = Toast
+
+    -- Animação de Entrada e Saída
+    TweenService:Create(Toast, TweenInfoElastic, {Position = UDim2.new(0, 0, 0, 0)}):Play()
+    
+    task.delay(duration, function()
+        if Toast and Toast.Parent then
+            local tweenOut = TweenService:Create(Toast, TweenInfoFast, {Position = UDim2.new(1.5, 0, 0, 0)})
+            tweenOut:Play()
+            tweenOut.Completed:Connect(function()
+                Toast:Destroy()
+            end)
+        end
+    end)
+end
+
+------------------------------------------------------------------------
+-- BARRA DE PESQUISA (:EnableSearchBar)
 ------------------------------------------------------------------------
 function CollieLib:EnableSearchBar()
     local SearchFrame = Instance.new("Frame")
@@ -268,19 +394,18 @@ function CollieLib:EnableSearchBar()
 end
 
 ------------------------------------------------------------------------
--- 2. TABS (CreateTab)
+-- SISTEMA DE ABAS (:CreateTab)
 ------------------------------------------------------------------------
-function CollieLib:CreateTab(tab_name, icon_id)
+function CollieLib:CreateTab(tab_name)
     local Tab = {}
     local Window = self
     
-    -- Botão da Aba
     local TabBtn = Instance.new("TextButton")
     TabBtn.Name = "TabBtn_" .. tab_name
     TabBtn.Size = UDim2.new(0, 130, 0, 32)
     TabBtn.BackgroundColor3 = Palette.White
     TabBtn.BackgroundTransparency = 0.5
-    TabBtn.Text = (icon_id and "  " or "") .. tab_name
+    TabBtn.Text = tab_name
     TabBtn.TextColor3 = Palette.TextPrimary
     TabBtn.Font = Enum.Font.FredokaOne
     TabBtn.TextSize = 13
@@ -290,7 +415,6 @@ function CollieLib:CreateTab(tab_name, icon_id)
     BtnCorner.CornerRadius = UDim.new(0, 10)
     BtnCorner.Parent = TabBtn
     
-    -- Página da Aba (Container com UIListLayout Seguro)
     local Page = Instance.new("ScrollingFrame")
     Page.Name = "Page_" .. tab_name
     Page.Size = UDim2.new(1, -20, 1, -20)
@@ -308,7 +432,6 @@ function CollieLib:CreateTab(tab_name, icon_id)
     PageList.SortOrder = Enum.SortOrder.LayoutOrder
     PageList.Parent = Page
     
-    -- Ajuste Automático de Tamanho do Scroll
     PageList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         Page.CanvasSize = UDim2.new(0, 0, 0, PageList.AbsoluteContentSize.Y + 15)
     end)
@@ -328,20 +451,16 @@ function CollieLib:CreateTab(tab_name, icon_id)
     end
     
     TabBtn.MouseButton1Click:Connect(SelectTab)
-    
     table.insert(Window.Tabs, Tab)
     
-    -- Seleciona a primeira aba por padrão
-    if #Window.Tabs == 1 then
-        SelectTab()
-    end
+    if #Window.Tabs == 1 then SelectTab() end
     
     setmetatable(Tab, {__index = CollieLib})
     return Tab
 end
 
 ------------------------------------------------------------------------
--- 11. FAVORITES SYSTEM (CreateFavorites)
+-- SISTEMA DE FAVORITOS
 ------------------------------------------------------------------------
 function CollieLib:CreateFavorites()
     if self.FavoritesTab then return end
@@ -364,22 +483,16 @@ local function AttachFavoriteStar(elementFrame, pageContainer, window)
     StarBtn.MouseButton1Click:Connect(function()
         isFav = not isFav
         StarBtn.Text = isFav and "★" or "☆"
-        
-        if isFav and window.FavoritesTab then
-            elementFrame.Parent = window.FavoritesTab.Page
-        else
-            elementFrame.Parent = pageContainer
-        end
+        elementFrame.Parent = (isFav and window.FavoritesTab) and window.FavoritesTab.Page or pageContainer
     end)
 end
 
 ------------------------------------------------------------------------
--- 3. SUBTABS (CreateSubTab)
+-- DEMAIS ELEMENTOS DA BIBLIOTECA
 ------------------------------------------------------------------------
 function CollieLib:CreateSubTab(sub_tab_name)
-    local SubContainer = self.Page:FindFirstChild("SubTabNav")
-    if not SubContainer then
-        SubContainer = Instance.new("Frame")
+    local SubContainer = self.Page:FindFirstChild("SubTabNav") or Instance.new("Frame")
+    if not SubContainer.Parent then
         SubContainer.Name = "SubTabNav"
         SubContainer.Size = UDim2.new(1, 0, 0, 30)
         SubContainer.BackgroundTransparency = 1
@@ -405,12 +518,8 @@ function CollieLib:CreateSubTab(sub_tab_name)
     Corner.Parent = SubBtn
 end
 
-------------------------------------------------------------------------
--- 4. SECTION (CreateSection)
-------------------------------------------------------------------------
 function CollieLib:CreateSection(section_title, tag)
     local SectionFrame = Instance.new("Frame")
-    SectionFrame.Name = "Section"
     SectionFrame.Size = UDim2.new(1, 0, 0, 25)
     SectionFrame.BackgroundTransparency = 1
     SectionFrame.Parent = self.Page
@@ -436,12 +545,8 @@ function CollieLib:CreateSection(section_title, tag)
     CreateTagLabel(SectionFrame, tag)
 end
 
-------------------------------------------------------------------------
--- 5. TOGGLE (CreateToggle)
-------------------------------------------------------------------------
 function CollieLib:CreateToggle(text, default, callback, tag)
     local state = default or false
-    
     local Frame = Instance.new("Frame")
     Frame.Size = UDim2.new(1, 0, 0, 36)
     Frame.BackgroundColor3 = Palette.White
@@ -463,7 +568,6 @@ function CollieLib:CreateToggle(text, default, callback, tag)
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.Parent = Frame
     
-    -- Switch
     local Switch = Instance.new("TextButton")
     Switch.Size = UDim2.new(0, 42, 0, 22)
     Switch.Position = UDim2.new(1, -75, 0.5, -11)
@@ -485,25 +589,17 @@ function CollieLib:CreateToggle(text, default, callback, tag)
     KnobCorner.CornerRadius = UDim.new(1, 0)
     KnobCorner.Parent = Knob
     
-    local function Toggle()
+    Switch.MouseButton1Click:Connect(function()
         state = not state
-        local targetPos = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
-        local targetColor = state and Palette.Accent or Color3.fromRGB(220, 225, 230)
-        
-        TweenService:Create(Knob, TweenInfoFast, {Position = targetPos}):Play()
-        TweenService:Create(Switch, TweenInfoFast, {BackgroundColor3 = targetColor}):Play()
-        
+        TweenService:Create(Knob, TweenInfoFast, {Position = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)}):Play()
+        TweenService:Create(Switch, TweenInfoFast, {BackgroundColor3 = state and Palette.Accent or Color3.fromRGB(220, 225, 230)}):Play()
         if callback then callback(state) end
-    end
+    end)
     
-    Switch.MouseButton1Click:Connect(Toggle)
     AttachFavoriteStar(Frame, self.Page, self.Window)
     CreateTagLabel(Frame, tag)
 end
 
-------------------------------------------------------------------------
--- 6. BUTTON (CreateButton)
-------------------------------------------------------------------------
 function CollieLib:CreateButton(text, callback, tag)
     local Frame = Instance.new("Frame")
     Frame.Size = UDim2.new(1, 0, 0, 36)
@@ -525,21 +621,14 @@ function CollieLib:CreateButton(text, callback, tag)
     Corner.Parent = Btn
     
     AddHoverClickFeedback(Btn, UDim2.new(1, -35, 1, 0), UDim2.new(1, -30, 1, 2), Palette.Accent, Palette.AccentActive)
-    
-    Btn.MouseButton1Click:Connect(function()
-        if callback then callback() end
-    end)
+    Btn.MouseButton1Click:Connect(function() if callback then callback() end end)
     
     AttachFavoriteStar(Frame, self.Page, self.Window)
     CreateTagLabel(Frame, tag)
 end
 
-------------------------------------------------------------------------
--- 7. SLIDER (CreateSlider)
-------------------------------------------------------------------------
 function CollieLib:CreateSlider(text, min, max, default, callback)
     local Value = default or min
-    
     local Frame = Instance.new("Frame")
     Frame.Size = UDim2.new(1, 0, 0, 45)
     Frame.BackgroundColor3 = Palette.White
@@ -589,10 +678,6 @@ function CollieLib:CreateSlider(text, min, max, default, callback)
     Fill.BorderSizePixel = 0
     Fill.Parent = BarBg
     
-    local FillCorner = Instance.new("UICorner")
-    FillCorner.CornerRadius = UDim.new(1, 0)
-    FillCorner.Parent = Fill
-    
     local dragging = false
     local function Update(input)
         local pos = math.clamp((input.Position.X - BarBg.AbsolutePosition.X) / BarBg.AbsoluteSize.X, 0, 1)
@@ -603,16 +688,11 @@ function CollieLib:CreateSlider(text, min, max, default, callback)
     end
     
     BarBg.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            Update(input)
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true Update(input) end
     end)
-    
     UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
-    
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then Update(input) end
     end)
@@ -620,12 +700,8 @@ function CollieLib:CreateSlider(text, min, max, default, callback)
     AttachFavoriteStar(Frame, self.Page, self.Window)
 end
 
-------------------------------------------------------------------------
--- 8. DROPDOWN (CreateDropdown)
-------------------------------------------------------------------------
 function CollieLib:CreateDropdown(text, options, callback)
     local expanded = false
-    
     local Frame = Instance.new("Frame")
     Frame.Size = UDim2.new(1, 0, 0, 36)
     Frame.BackgroundColor3 = Palette.White
@@ -646,15 +722,6 @@ function CollieLib:CreateDropdown(text, options, callback)
     ToggleBtn.TextSize = 13
     ToggleBtn.TextXAlignment = Enum.TextXAlignment.Left
     ToggleBtn.Parent = Frame
-    
-    local Arrow = Instance.new("TextLabel")
-    Arrow.Size = UDim2.new(0, 20, 0, 20)
-    Arrow.Position = UDim2.new(1, -55, 0, 8)
-    Arrow.BackgroundTransparency = 1
-    Arrow.Text = "▼"
-    Arrow.TextColor3 = Palette.TextSecondary
-    Arrow.Font = Enum.Font.FredokaOne
-    Arrow.Parent = ToggleBtn
     
     local OptContainer = Instance.new("Frame")
     OptContainer.Size = UDim2.new(1, -20, 0, #options * 24)
@@ -684,27 +751,20 @@ function CollieLib:CreateDropdown(text, options, callback)
             ToggleBtn.Text = "  " .. text .. " (" .. opt .. ")"
             expanded = false
             TweenService:Create(Frame, TweenInfoFast, {Size = UDim2.new(1, 0, 0, 36)}):Play()
-            Arrow.Text = "▼"
             if callback then callback(opt) end
         end)
     end
     
     ToggleBtn.MouseButton1Click:Connect(function()
         expanded = not expanded
-        local targetSize = expanded and UDim2.new(1, 0, 0, 40 + (#options * 26)) or UDim2.new(1, 0, 0, 36)
-        TweenService:Create(Frame, TweenInfoFast, {Size = targetSize}):Play()
-        Arrow.Text = expanded and "▲" or "▼"
+        TweenService:Create(Frame, TweenInfoFast, {Size = expanded and UDim2.new(1, 0, 0, 40 + (#options * 26)) or UDim2.new(1, 0, 0, 36)}):Play()
     end)
     
     AttachFavoriteStar(Frame, self.Page, self.Window)
 end
 
-------------------------------------------------------------------------
--- 9. HOTKEY (CreateHotkey)
-------------------------------------------------------------------------
 function CollieLib:CreateHotkey(text, defaultKey, callback)
     local currentKey = defaultKey or Enum.KeyCode.E
-    
     local Frame = Instance.new("Frame")
     Frame.Size = UDim2.new(1, 0, 0, 36)
     Frame.BackgroundColor3 = Palette.White
@@ -741,12 +801,9 @@ function CollieLib:CreateHotkey(text, defaultKey, callback)
     KeyCorner.Parent = KeyBtn
     
     local listening = false
-    KeyBtn.MouseButton1Click:Connect(function()
-        listening = true
-        KeyBtn.Text = "..."
-    end)
+    KeyBtn.MouseButton1Click:Connect(function() listening = true KeyBtn.Text = "..." end)
     
-    UserInputService.InputBegan:Connect(function(input, gpe)
+    UserInputService.InputBegan:Connect(function(input)
         if listening and input.UserInputType == Enum.UserInputType.Keyboard then
             listening = false
             currentKey = input.KeyCode
@@ -758,9 +815,93 @@ function CollieLib:CreateHotkey(text, defaultKey, callback)
     AttachFavoriteStar(Frame, self.Page, self.Window)
 end
 
-------------------------------------------------------------------------
--- 10. SHORTCUT (CreateShortcut)
-------------------------------------------------------------------------
+function CollieLib:CreateColorPicker(text, defaultColor, callback)
+    local currentColor = defaultColor or Palette.Accent
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(1, 0, 0, 36)
+    Frame.BackgroundColor3 = Palette.White
+    Frame.Parent = self.Page
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 10)
+    Corner.Parent = Frame
+    
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Size = UDim2.new(0.6, 0, 1, 0)
+    Title.Position = UDim2.new(0, 12, 0, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = text
+    Title.TextColor3 = Palette.TextPrimary
+    Title.Font = Enum.Font.FredokaOne
+    Title.TextSize = 13
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = Frame
+    
+    local ColorPreview = Instance.new("TextButton")
+    ColorPreview.Size = UDim2.new(0, 30, 0, 20)
+    ColorPreview.Position = UDim2.new(1, -65, 0.5, -10)
+    ColorPreview.BackgroundColor3 = currentColor
+    ColorPreview.Text = ""
+    ColorPreview.Parent = Frame
+    
+    local PreviewCorner = Instance.new("UICorner")
+    PreviewCorner.CornerRadius = UDim.new(0, 6)
+    PreviewCorner.Parent = ColorPreview
+    
+    ColorPreview.MouseButton1Click:Connect(function()
+        currentColor = (currentColor == defaultColor) and Palette.Accent or defaultColor
+        TweenService:Create(ColorPreview, TweenInfoFast, {BackgroundColor3 = currentColor}):Play()
+        if callback then callback(currentColor) end
+    end)
+    
+    AttachFavoriteStar(Frame, self.Page, self.Window)
+end
+
+function CollieLib:CreateTextBox(text, placeholder, callback)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(1, 0, 0, 36)
+    Frame.BackgroundColor3 = Palette.White
+    Frame.Parent = self.Page
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 10)
+    Corner.Parent = Frame
+    
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Size = UDim2.new(0.4, 0, 1, 0)
+    Title.Position = UDim2.new(0, 12, 0, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = text
+    Title.TextColor3 = Palette.TextPrimary
+    Title.Font = Enum.Font.FredokaOne
+    Title.TextSize = 13
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = Frame
+    
+    local InputBox = Instance.new("TextBox")
+    InputBox.Size = UDim2.new(0, 130, 0, 22)
+    InputBox.Position = UDim2.new(1, -165, 0.5, -11)
+    InputBox.BackgroundColor3 = Palette.ContentBg
+    InputBox.PlaceholderText = placeholder or "Digite..."
+    InputBox.Text = ""
+    InputBox.TextColor3 = Palette.TextPrimary
+    InputBox.Font = Enum.Font.FredokaOne
+    InputBox.TextSize = 11
+    InputBox.Parent = Frame
+    
+    local BoxCorner = Instance.new("UICorner")
+    BoxCorner.CornerRadius = UDim.new(0, 6)
+    BoxCorner.Parent = InputBox
+    
+    InputBox.FocusLost:Connect(function(enter)
+        if enter and callback then callback(InputBox.Text) end
+    end)
+    
+    AttachFavoriteStar(Frame, self.Page, self.Window)
+end
+
 function CollieLib:CreateShortcut(text, callback)
     self:CreateButton("⚡ " .. text, callback)
 end
