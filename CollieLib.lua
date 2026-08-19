@@ -1,7 +1,7 @@
 --[[
-    COLLIELIB v1.2 🐾✨
-    Design: Cute Cartoon / Dark & Light Blue Edition
-    Fundo: Azul Escuro | Elementos: Azul Claro Pastel & Gradientes
+    COLLIELIB v2.0 - ULTIMATE REDESIGN 🐾✨
+    Style: Soft Pastel Dark/Light Blue (No Text Outlines)
+    Features: Interactive Trail Effects, Custom Config Manager & Smooth Animations
 --]]
 
 local CollieLib = {}
@@ -9,213 +9,199 @@ CollieLib.__index = CollieLib
 
 -- Serviços do Roblox
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 
--- PALETA DE CORES (AZUL ESCURO & AZUL CLARO)
-local BLUE_PALETTE = {
-    Background = Color3.fromRGB(24, 32, 54),       -- Azul Escuro Noturno (Fundo Principal)
-    CardBackground = Color3.fromRGB(36, 46, 73),   -- Azul Escuro Médio (Cards e Caixas)
-    Primary = Color3.fromRGB(85, 170, 255),        -- Azul Claro Vibrante
-    PrimaryDark = Color3.fromRGB(0, 210, 255),     -- Azul Ciano Claro
-    Secondary = Color3.fromRGB(160, 210, 255),     -- Azul Bebê Pastel
-    TextLight = Color3.fromRGB(240, 248, 255),     -- Texto Claro/Branco
-    TextMuted = Color3.fromRGB(150, 180, 215),     -- Texto Secundário
-    Border = Color3.fromRGB(100, 180, 255)         -- Borda Azul Claro Destaque
+-- PALETA DE CORES FOFA (AZUL PASTEL & ESCURO)
+local THEME = {
+    Background = Color3.fromRGB(18, 24, 38),       -- Azul Noturno Profundo
+    Card = Color3.fromRGB(28, 38, 58),             -- Azul Escuro Suave
+    CardHover = Color3.fromRGB(36, 48, 72),        -- Card em Foco
+    Accent = Color3.fromRGB(92, 180, 255),         -- Azul Pastel Vibrante
+    AccentSecondary = Color3.fromRGB(125, 230, 255),-- Ciano Claro Fofo
+    TextMain = Color3.fromRGB(240, 246, 255),      -- Texto Principal
+    TextSub = Color3.fromRGB(140, 165, 200),       -- Texto Secundário
+    Success = Color3.fromRGB(120, 220, 180),       -- Verde Pastel
+    Disabled = Color3.fromRGB(50, 60, 80)          -- Desativado
 }
 
--- Auxiliar de Animação (Tween)
+-- BANCO DE DADOS DE CONFIGURAÇÕES (SISTEMA DE PROFILES)
+CollieLib.Flags = {}
+CollieLib.ConfigFolder = "CollieLib_Configs"
+
+-- Garantir que a pasta de configs exista localmente
+if writefile and isfolder and not isfolder(CollieLib.ConfigFolder) then
+    makefolder(CollieLib.ConfigFolder)
+end
+
+-- HELPER: Tween Rápido
 local function Tween(instance, info, properties)
     local tween = TweenService:Create(instance, TweenInfo.new(unpack(info)), properties)
     tween:Play()
     return tween
 end
 
--- Auxiliar de Canto Arredondado (Cartoon)
+-- HELPER: Cantos Arredondados Fofos
 local function AddCorner(parent, radius)
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius or 16)
+    corner.CornerRadius = UDim.new(0, radius or 18)
     corner.Parent = parent
     return corner
 end
 
--- Auxiliar de Gradiente Azul
-local function AddBlueGradient(parent, colorStart, colorEnd, rotation)
+-- HELPER: Gradiente Azul
+local function AddBlueGradient(parent)
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, colorStart or BLUE_PALETTE.Primary),
-        ColorSequenceKeypoint.new(1, colorEnd or BLUE_PALETTE.PrimaryDark)
+        ColorSequenceKeypoint.new(0, THEME.Accent),
+        ColorSequenceKeypoint.new(1, THEME.AccentSecondary)
     })
-    gradient.Rotation = rotation or 45
+    gradient.Rotation = 45
     gradient.Parent = parent
     return gradient
 end
 
--- MAPA DE CORES DAS TAGS
-local TAG_COLORS = {
-    BETA = Color3.fromRGB(120, 190, 255),
-    ATUALIZANDO = Color3.fromRGB(140, 235, 200),
-    REMOVIDO = Color3.fromRGB(180, 190, 230),
-    BLOQUEADO = Color3.fromRGB(255, 130, 130),
-    NOVO = Color3.fromRGB(130, 230, 220)
-}
+---------------------------------------------------------
+-- EFEITO INTERATIVO DE TRILHA DE MOUSE (BUBBLE TRAIL)
+---------------------------------------------------------
+local function SpawnMouseParticle(container)
+    local particle = Instance.new("Frame")
+    particle.Size = UDim2.new(0, math.random(6, 12), 0, math.random(6, 12))
+    particle.Position = UDim2.new(0, Mouse.X - container.AbsolutePosition.X + math.random(-5, 5), 0, Mouse.Y - container.AbsolutePosition.Y + math.random(-5, 5))
+    particle.BackgroundColor3 = THEME.AccentSecondary
+    particle.BackgroundTransparency = 0.3
+    particle.ZIndex = 100
+    particle.Parent = container
+    AddCorner(particle, 20)
 
--- Auxiliar para Criar Tag Visual (Badge Cartoon)
-local function CreateBadge(parent, tagType, position, anchorPoint)
-    tagType = string.upper(tostring(tagType or ""))
-    local tagColor = TAG_COLORS[tagType] or BLUE_PALETTE.Primary
+    local targetSize = particle.Size.X.Offset * 1.8
+    local tween = Tween(particle, {0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {
+        Size = UDim2.new(0, targetSize, 0, targetSize),
+        BackgroundTransparency = 1,
+        Position = particle.Position + UDim2.new(0, math.random(-15, 15), 0, math.random(-20, -5))
+    })
 
-    local badge = Instance.new("Frame")
-    badge.Name = "Badge_" .. tagType
-    badge.Size = UDim2.new(0, 0, 0, 18)
-    badge.Position = position or UDim2.new(1, -6, 0, 6)
-    badge.AnchorPoint = anchorPoint or Vector2.new(1, 0)
-    badge.BackgroundColor3 = tagColor
-    badge.ZIndex = parent.ZIndex + 5
-    badge.Parent = parent
-
-    AddCorner(badge, 12)
-
-    local label = Instance.new("TextLabel")
-    label.Text = tagType
-    label.Font = Enum.Font.FredokaOne
-    label.TextSize = 10
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Parent = badge
-
-    local textWidth = #tagType * 7 + 12
-    badge.Size = UDim2.new(0, textWidth, 0, 18)
-    return badge
+    tween.Completed:Connect(function()
+        particle:Destroy()
+    end)
 end
 
--- SISTEMA DE NOTIFICAÇÕES (Estilo Card Cartoon Azul)
+---------------------------------------------------------
+-- SISTEMA DE NOTIFICAÇÕES FOFEIRAS
+---------------------------------------------------------
 local NotificationGui
 local NotificationContainer
 
-local function InitNotificationSystem()
+local function InitNotifications()
     if not NotificationGui then
         NotificationGui = Instance.new("ScreenGui")
-        NotificationGui.Name = "CollieNotifications"
+        NotificationGui.Name = "CollieNotifications_v2"
         NotificationGui.ResetOnSpawn = false
         pcall(function() NotificationGui.Parent = CoreGui end)
-        if not NotificationGui.Parent then
-            NotificationGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-        end
+        if not NotificationGui.Parent then NotificationGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
         NotificationContainer = Instance.new("Frame")
-        NotificationContainer.Name = "Container"
-        NotificationContainer.Size = UDim2.new(0, 280, 1, -20)
-        NotificationContainer.Position = UDim2.new(1, -290, 0, 10)
+        NotificationContainer.Size = UDim2.new(0, 260, 1, -20)
+        NotificationContainer.Position = UDim2.new(1, -270, 0, 10)
         NotificationContainer.BackgroundTransparency = 1
         NotificationContainer.Parent = NotificationGui
 
         local layout = Instance.new("UIListLayout")
         layout.VerticalAlignment = Enum.VerticalAlignment.Bottom
         layout.SortOrder = Enum.SortOrder.LayoutOrder
-        layout.Padding = UDim.new(0, 10)
+        layout.Padding = UDim.new(0, 8)
         layout.Parent = NotificationContainer
     end
 end
 
 function CollieLib:Notify(config)
     config = config or {}
-    InitNotificationSystem()
-
-    local titleText = config.Title or "Collie Notice 🐾"
-    local contentText = config.Content or ""
-    local duration = config.Duration or 3
+    InitNotifications()
 
     local card = Instance.new("Frame")
-    card.Size = UDim2.new(1, 0, 0, 65)
-    card.BackgroundColor3 = BLUE_PALETTE.CardBackground
-    card.Position = UDim2.new(1, 320, 0, 0)
+    card.Size = UDim2.new(1, 0, 0, 58)
+    card.BackgroundColor3 = THEME.Card
+    card.Position = UDim2.new(1, 300, 0, 0)
     card.Parent = NotificationContainer
-
     AddCorner(card, 16)
 
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = BLUE_PALETTE.Border
-    stroke.Thickness = 2
-    stroke.Parent = card
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(0, 5, 0.6, 0)
+    bar.Position = UDim2.new(0, 10, 0.2, 0)
+    bar.BackgroundColor3 = THEME.Accent
+    bar.Parent = card
+    AddCorner(bar, 10)
 
     local title = Instance.new("TextLabel")
-    title.Text = "🐾 " .. titleText
+    title.Text = config.Title or "Collie Notification 🐾"
     title.Font = Enum.Font.FredokaOne
-    title.TextSize = 14
-    title.TextColor3 = BLUE_PALETTE.Secondary
-    title.Position = UDim2.new(0, 12, 0, 8)
-    title.Size = UDim2.new(1, -24, 0, 18)
+    title.TextSize = 13
+    title.TextColor3 = THEME.AccentSecondary
+    title.Position = UDim2.new(0, 24, 0, 10)
+    title.Size = UDim2.new(1, -30, 0, 16)
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.BackgroundTransparency = 1
     title.Parent = card
 
     local content = Instance.new("TextLabel")
-    content.Text = contentText
+    content.Text = config.Content or ""
     content.Font = Enum.Font.GothamMedium
     content.TextSize = 11
-    content.TextColor3 = BLUE_PALETTE.TextLight
-    content.Position = UDim2.new(0, 12, 0, 28)
-    content.Size = UDim2.new(1, -24, 0, 30)
+    content.TextColor3 = THEME.TextMain
+    content.Position = UDim2.new(0, 24, 0, 28)
+    content.Size = UDim2.new(1, -30, 0, 20)
     content.TextXAlignment = Enum.TextXAlignment.Left
-    content.TextWrapped = true
     content.BackgroundTransparency = 1
     content.Parent = card
 
     Tween(card, {0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out}, {Position = UDim2.new(0, 0, 0, 0)})
 
-    task.delay(duration, function()
-        local tweenOut = Tween(card, {0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In}, {Position = UDim2.new(1, 320, 0, 0)})
-        tweenOut.Completed:Connect(function()
-            card:Destroy()
-        end)
+    task.delay(config.Duration or 3, function()
+        local tw = Tween(card, {0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In}, {Position = UDim2.new(1, 300, 0, 0)})
+        tw.Completed:Connect(function() card:Destroy() end)
     end)
 end
 
--- CREATOR DA JANELA PRINCIPAL
+---------------------------------------------------------
+-- JANELA PRINCIPAL (MAIN WINDOW)
+---------------------------------------------------------
 function CollieLib:CreateWindow(config)
     config = config or {}
     local TitleText = config.Title or "Collie Hub"
-    local SubTitleText = config.SubTitle or "Dark & Light Blue Edition 🐾"
+    local SubTitleText = config.SubTitle or "v2.0 Soft Blue Edition 🐾"
     local ToggleKey = config.ToggleKey or Enum.KeyCode.LeftControl
 
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "CollieHub"
+    ScreenGui.Name = "CollieHub_v2"
     ScreenGui.ResetOnSpawn = false
     pcall(function() ScreenGui.Parent = CoreGui end)
     if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 780, 0, 480)
-    MainFrame.Position = UDim2.new(0.5, -390, 0.5, -240)
-    MainFrame.BackgroundColor3 = BLUE_PALETTE.Background
+    MainFrame.Size = UDim2.new(0, 750, 0, 460)
+    MainFrame.Position = UDim2.new(0.5, -375, 0.5, -230)
+    MainFrame.BackgroundColor3 = THEME.Background
     MainFrame.Active = true
+    MainFrame.ClipsDescendants = false
     MainFrame.Parent = ScreenGui
-    AddCorner(MainFrame, 20)
+    AddCorner(MainFrame, 22)
 
-    -- Borda Azul Claro Destaque (Cartoon)
-    local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = BLUE_PALETTE.Border
-    MainStroke.Thickness = 3
-    MainStroke.Parent = MainFrame
+    -- Trilha do Mouse na Interface
+    local lastParticle = 0
+    MainFrame.MouseMovement:Connect(function()
+        if tick() - lastParticle > 0.04 then
+            lastParticle = tick()
+            SpawnMouseParticle(MainFrame)
+        end
+    end)
 
-    -- Efeito Hover nos Botões
-    local function AddCuteHover(button)
-        button.MouseEnter:Connect(function()
-            Tween(button, {0.15, Enum.EasingStyle.Quad}, {Size = UDim2.new(button.Size.X.Scale, button.Size.X.Offset, button.Size.Y.Scale, button.Size.Y.Offset + 2)})
-        end)
-        button.MouseLeave:Connect(function()
-            Tween(button, {0.15, Enum.EasingStyle.Quad}, {Size = UDim2.new(button.Size.X.Scale, button.Size.X.Offset, button.Size.Y.Scale, button.Size.Y.Offset - 2)})
-        end)
-    end
-
-    -- Sistema de Arrastar (Drag)
+    -- Sistema de Arrastar (Drag System)
     local dragging, dragStart, startPos
     MainFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -236,51 +222,46 @@ function CollieLib:CreateWindow(config)
         end
     end)
 
-    -- Toggle Visibilidade
+    -- Atalho para Ocultar/Exibir
     local IsVisible = true
-    local function SetUIVisibility(visible)
-        IsVisible = visible
-        MainFrame.Visible = IsVisible
-    end
-
     UserInputService.InputBegan:Connect(function(input, gpe)
         if not gpe and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == ToggleKey then
-            SetUIVisibility(not IsVisible)
+            IsVisible = not IsVisible
+            MainFrame.Visible = IsVisible
         end
     end)
 
-    -- Sidebar (Painel Esquerdo)
+    -- BARRA LATERAL (SIDEBAR)
     local Sidebar = Instance.new("Frame")
-    Sidebar.Name = "Sidebar"
     Sidebar.Size = UDim2.new(0, 190, 1, 0)
     Sidebar.BackgroundTransparency = 1
     Sidebar.Parent = MainFrame
 
-    local HubTitle = Instance.new("TextLabel")
-    HubTitle.Text = "🐾 " .. TitleText
-    HubTitle.Font = Enum.Font.FredokaOne
-    HubTitle.TextSize = 18
-    HubTitle.TextColor3 = BLUE_PALETTE.Secondary
-    HubTitle.Position = UDim2.new(0, 18, 0, 25)
-    HubTitle.Size = UDim2.new(1, -20, 0, 22)
-    HubTitle.TextXAlignment = Enum.TextXAlignment.Left
-    HubTitle.BackgroundTransparency = 1
-    HubTitle.Parent = Sidebar
+    local LogoTitle = Instance.new("TextLabel")
+    LogoTitle.Text = "🐾 " .. TitleText
+    LogoTitle.Font = Enum.Font.FredokaOne
+    LogoTitle.TextSize = 18
+    LogoTitle.TextColor3 = THEME.AccentSecondary
+    LogoTitle.Position = UDim2.new(0, 20, 0, 22)
+    LogoTitle.Size = UDim2.new(1, -20, 0, 22)
+    LogoTitle.TextXAlignment = Enum.TextXAlignment.Left
+    LogoTitle.BackgroundTransparency = 1
+    LogoTitle.Parent = Sidebar
 
-    local HubSub = Instance.new("TextLabel")
-    HubSub.Text = SubTitleText
-    HubSub.Font = Enum.Font.GothamMedium
-    HubSub.TextSize = 11
-    HubSub.TextColor3 = BLUE_PALETTE.TextMuted
-    HubSub.Position = UDim2.new(0, 18, 0, 48)
-    HubSub.Size = UDim2.new(1, -20, 0, 15)
-    HubSub.TextXAlignment = Enum.TextXAlignment.Left
-    HubSub.BackgroundTransparency = 1
-    HubSub.Parent = Sidebar
+    local LogoSub = Instance.new("TextLabel")
+    LogoSub.Text = SubTitleText
+    LogoSub.Font = Enum.Font.GothamMedium
+    LogoSub.TextSize = 11
+    LogoSub.TextColor3 = THEME.TextSub
+    LogoSub.Position = UDim2.new(0, 20, 0, 44)
+    LogoSub.Size = UDim2.new(1, -20, 0, 16)
+    LogoSub.TextXAlignment = Enum.TextXAlignment.Left
+    LogoSub.BackgroundTransparency = 1
+    LogoSub.Parent = Sidebar
 
     local NavContainer = Instance.new("Frame")
-    NavContainer.Size = UDim2.new(1, -24, 1, -100)
-    NavContainer.Position = UDim2.new(0, 12, 0, 80)
+    NavContainer.Size = UDim2.new(1, -24, 1, -80)
+    NavContainer.Position = UDim2.new(0, 12, 0, 70)
     NavContainer.BackgroundTransparency = 1
     NavContainer.Parent = Sidebar
 
@@ -288,259 +269,113 @@ function CollieLib:CreateWindow(config)
     NavLayout.Padding = UDim.new(0, 8)
     NavLayout.Parent = NavContainer
 
-    -- Conteúdo Principal (Lado Direito)
-    local MainContent = Instance.new("Frame")
-    MainContent.Size = UDim2.new(1, -210, 1, -30)
-    MainContent.Position = UDim2.new(0, 200, 0, 15)
-    MainContent.BackgroundTransparency = 1
-    MainContent.Parent = MainFrame
-
-    local SectionTitle = Instance.new("TextLabel")
-    SectionTitle.Size = UDim2.new(0, 250, 0, 30)
-    SectionTitle.BackgroundTransparency = 1
-    SectionTitle.Text = "Menu"
-    SectionTitle.TextColor3 = BLUE_PALETTE.TextLight
-    SectionTitle.TextSize = 20
-    SectionTitle.Font = Enum.Font.FredokaOne
-    SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
-    SectionTitle.Parent = MainContent
-
-    local SearchBox = Instance.new("TextBox")
-    SearchBox.Size = UDim2.new(0, 200, 0, 32)
-    SearchBox.Position = UDim2.new(1, -200, 0, 0)
-    SearchBox.BackgroundColor3 = BLUE_PALETTE.CardBackground
-    SearchBox.PlaceholderText = "Pesquisar... ✨"
-    SearchBox.PlaceholderColor3 = BLUE_PALETTE.TextMuted
-    SearchBox.TextColor3 = BLUE_PALETTE.TextLight
-    SearchBox.TextSize = 12
-    SearchBox.Font = Enum.Font.GothamMedium
-    SearchBox.TextXAlignment = Enum.TextXAlignment.Left
-    SearchBox.Parent = MainContent
-    AddCorner(SearchBox, 12)
-
-    local SearchStroke = Instance.new("UIStroke")
-    SearchStroke.Color = BLUE_PALETTE.Border
-    SearchStroke.Thickness = 1.5
-    SearchStroke.Parent = SearchBox
-
-    local SearchPadding = Instance.new("UIPadding")
-    SearchPadding.PaddingLeft = UDim.new(0, 10)
-    SearchPadding.Parent = SearchBox
-
-    local DisplayViews = Instance.new("Frame")
-    DisplayViews.Size = UDim2.new(1, 0, 1, -45)
-    DisplayViews.Position = UDim2.new(0, 0, 0, 45)
-    DisplayViews.BackgroundTransparency = 1
-    DisplayViews.Parent = MainContent
+    -- ÁREA PRINCIPAL
+    local ContentArea = Instance.new("Frame")
+    ContentArea.Size = UDim2.new(1, -205, 1, -24)
+    ContentArea.Position = UDim2.new(0, 195, 0, 12)
+    ContentArea.BackgroundTransparency = 1
+    ContentArea.Parent = MainFrame
 
     local WindowObj = {
-        ScreenGui = ScreenGui,
-        MainFrame = MainFrame,
         Tabs = {},
         ActiveTab = nil,
-        SetToggleKey = function(self, newKey) ToggleKey = newKey end,
-        ToggleUI = function(self) SetUIVisibility(not IsVisible) end,
-        Destroy = function(self) ScreenGui:Destroy() end
+        Destroy = function() ScreenGui:Destroy() end
     }
 
-    -- CRIADOR DE ABAS (CreateTab)
+    ---------------------------------------------------------
+    -- SISTEMA DE CONFIGURAÇÕES LOCAL (SALVAR / CARREGAR)
+    ---------------------------------------------------------
+    function WindowObj:SaveConfig(profileName)
+        profileName = profileName or "default"
+        if writefile then
+            local filePath = CollieLib.ConfigFolder .. "/" .. profileName .. ".json"
+            local data = HttpService:JSONEncode(CollieLib.Flags)
+            writefile(filePath, data)
+            CollieLib:Notify({ Title = "Perfil Salvo!", Content = "Perfil '" .. profileName .. "' gravado com sucesso! 💾", Duration = 3 })
+        else
+            CollieLib:Notify({ Title = "Erro", Content = "Seu executor não suporta salvamento local.", Duration = 3 })
+        end
+    end
+
+    function WindowObj:LoadConfig(profileName)
+        profileName = profileName or "default"
+        if readfile and isfile then
+            local filePath = CollieLib.ConfigFolder .. "/" .. profileName .. ".json"
+            if isfile(filePath) then
+                local rawData = readfile(filePath)
+                local decoded = HttpService:JSONDecode(rawData)
+                for flag, value in pairs(decoded) do
+                    if CollieLib.Flags[flag] and CollieLib.Flags[flag].Set then
+                        CollieLib.Flags[flag].Set(value)
+                    end
+                end
+                CollieLib:Notify({ Title = "Perfil Carregado!", Content = "Perfil '" .. profileName .. "' aplicado com sucesso! 📂", Duration = 3 })
+            else
+                CollieLib:Notify({ Title = "Aviso", Content = "Perfil '" .. profileName .. "' não encontrado.", Duration = 3 })
+            end
+        end
+    end
+
+    -- CRIADOR DE ABAS
     function WindowObj:CreateTab(tabConfig)
         tabConfig = tabConfig or {}
         local TabName = tabConfig.Name or "Aba"
-        local IsHorizontalGrid = tabConfig.HorizontalGrid or false
-        local Hidden = tabConfig.Hidden or false
-        local TabTag = tabConfig.Tag or nil
 
         local NavBtn = Instance.new("TextButton")
-        NavBtn.Size = UDim2.new(1, 0, 0, 36)
-        NavBtn.BackgroundColor3 = BLUE_PALETTE.CardBackground
-        NavBtn.BackgroundTransparency = 0.2
+        NavBtn.Size = UDim2.new(1, 0, 0, 38)
+        NavBtn.BackgroundColor3 = THEME.Card
         NavBtn.Text = "  " .. TabName
-        NavBtn.TextColor3 = BLUE_PALETTE.TextMuted
+        NavBtn.TextColor3 = THEME.TextSub
         NavBtn.TextSize = 13
         NavBtn.Font = Enum.Font.FredokaOne
         NavBtn.TextXAlignment = Enum.TextXAlignment.Left
-        NavBtn.Visible = not Hidden
         NavBtn.Parent = NavContainer
-        AddCorner(NavBtn, 12)
-
-        local TabStroke = Instance.new("UIStroke")
-        TabStroke.Color = BLUE_PALETTE.Border
-        TabStroke.Thickness = 1
-        TabStroke.Parent = NavBtn
-
-        local isDisabled = false
-        if TabTag then
-            local upperTag = string.upper(TabTag)
-            CreateBadge(NavBtn, upperTag, UDim2.new(1, -8, 0.5, -9), Vector2.new(1, 0))
-            if upperTag == "BLOQUEADO" or upperTag == "REMOVIDO" then
-                isDisabled = true
-                NavBtn.AutoButtonColor = false
-            end
-        end
+        AddCorner(NavBtn, 14)
 
         local TabPage = Instance.new("ScrollingFrame")
-        TabPage.Name = "Page_" .. TabName
+        TabPage.Size = UDim2.new(1, 0, 1, 0)
         TabPage.Visible = false
         TabPage.BackgroundTransparency = 1
-        TabPage.Parent = DisplayViews
+        TabPage.ScrollBarThickness = 3
+        TabPage.ScrollBarImageColor3 = THEME.Accent
+        TabPage.Parent = ContentArea
 
-        if IsHorizontalGrid then
-            TabPage.Size = UDim2.new(1, -10, 0, 180)
-            TabPage.Position = UDim2.new(0, 5, 0, 5)
-            TabPage.ScrollBarThickness = 4
-            TabPage.ScrollBarImageColor3 = BLUE_PALETTE.Secondary
-            TabPage.ScrollingDirection = Enum.ScrollingDirection.X
-            TabPage.ClipsDescendants = true
+        local ListLayout = Instance.new("UIListLayout")
+        ListLayout.Padding = UDim.new(0, 10)
+        ListLayout.Parent = TabPage
 
-            local containerFrame = Instance.new("Frame")
-            containerFrame.Size = UDim2.new(0, 0, 1, 0)
-            containerFrame.Parent = TabPage
-            containerFrame.BackgroundTransparency = 1
+        ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            TabPage.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 15)
+        end)
 
-            local horizontalLayout = Instance.new("UIListLayout")
-            horizontalLayout.FillDirection = Enum.FillDirection.Horizontal
-            horizontalLayout.Padding = UDim.new(0, 15)
-            horizontalLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            horizontalLayout.Parent = containerFrame
-
-            horizontalLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                containerFrame.Size = UDim2.new(0, horizontalLayout.AbsoluteContentSize.X, 1, 0)
-                TabPage.CanvasSize = UDim2.new(0, horizontalLayout.AbsoluteContentSize.X + 20, 0, 0)
-            end)
-        else
-            TabPage.Size = UDim2.new(1, 0, 1, 0)
-            TabPage.ScrollBarThickness = 4
-            TabPage.ScrollBarImageColor3 = BLUE_PALETTE.Secondary
-            TabPage.ScrollingDirection = Enum.ScrollingDirection.Y
-
-            local listLayout = Instance.new("UIListLayout")
-            listLayout.Padding = UDim.new(0, 10)
-            listLayout.Parent = TabPage
-
-            listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                TabPage.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 15)
-            end)
-        end
-
-        local TabObj = { Page = TabPage, Button = NavBtn, Name = TabName, SearchItems = {} }
+        local TabObj = { Page = TabPage, Button = NavBtn }
 
         function TabObj:Select()
-            if isDisabled then
-                CollieLib:Notify({ Title = "Ops!", Content = "Esta aba está " .. string.upper(TabTag) .. " 🐾", Duration = 2 })
-                return
-            end
-
             for _, t in pairs(WindowObj.Tabs) do
                 t.Page.Visible = false
-                Tween(t.Button, {0.2}, {BackgroundColor3 = BLUE_PALETTE.CardBackground, BackgroundTransparency = 0.2, TextColor3 = BLUE_PALETTE.TextMuted})
+                Tween(t.Button, {0.2}, {BackgroundColor3 = THEME.Card, TextColor3 = THEME.TextSub})
             end
-
             TabPage.Visible = true
-            SectionTitle.Text = TabName
-            Tween(NavBtn, {0.2}, {BackgroundColor3 = BLUE_PALETTE.Primary, BackgroundTransparency = 0, TextColor3 = Color3.fromRGB(255, 255, 255)})
+            Tween(NavBtn, {0.2}, {BackgroundColor3 = THEME.Accent, TextColor3 = Color3.fromRGB(255, 255, 255)})
             WindowObj.ActiveTab = TabObj
         end
 
         NavBtn.MouseButton1Click:Connect(function() TabObj:Select() end)
         table.insert(WindowObj.Tabs, TabObj)
 
-        if #WindowObj.Tabs == 1 and not Hidden and not isDisabled then TabObj:Select() end
+        if #WindowObj.Tabs == 1 then TabObj:Select() end
 
-        -- Pesquisa
-        SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-            if WindowObj.ActiveTab == TabObj then
-                local cleanText = string.lower(SearchBox.Text)
-                for _, item in ipairs(TabObj.SearchItems) do
-                    item.Instance.Visible = (cleanText == "" or string.find(string.lower(item.Name), cleanText) ~= nil)
-                end
-            end
-        end)
-
-        -- COMPONENTES DA ABA
-
-        -- CARD DE JOGO
-        function TabObj:CreateGameCard(cardConfig)
-            cardConfig = cardConfig or {}
-            local Name = cardConfig.Name or "Jogo"
-            local Callback = cardConfig.Callback or function() end
-            local CardTag = cardConfig.Tag or nil
-            local IsFavorite = cardConfig.Favorite or false
-
-            local parentFrame = TabPage:FindFirstChildOfClass("Frame") or TabPage
-
-            local card = Instance.new("TextButton")
-            card.Name = Name
-            card.Size = UDim2.new(0, 110, 0, 140)
-            card.BackgroundColor3 = BLUE_PALETTE.CardBackground
-            card.Text = ""
-            card.LayoutOrder = IsFavorite and 0 or 10
-            card.Parent = parentFrame
-            AddCorner(card, 16)
-
-            AddBlueGradient(card, BLUE_PALETTE.CardBackground, Color3.fromRGB(48, 62, 98), 45)
-
-            local cardStroke = Instance.new("UIStroke")
-            cardStroke.Color = BLUE_PALETTE.Border
-            cardStroke.Thickness = 1.5
-            cardStroke.Parent = card
-
-            AddCuteHover(card)
-
-            local cardDisabled = false
-            if CardTag then
-                local upperTag = string.upper(CardTag)
-                CreateBadge(card, upperTag, UDim2.new(0, 6, 0, 6), Vector2.new(0, 0))
-                if upperTag == "BLOQUEADO" or upperTag == "REMOVIDO" then cardDisabled = true end
-            end
-
-            -- Botão Favorito
-            local FavBtn = Instance.new("TextButton")
-            FavBtn.Size = UDim2.new(0, 22, 0, 22)
-            FavBtn.Position = UDim2.new(1, -24, 0, 4)
-            FavBtn.BackgroundTransparency = 1
-            FavBtn.Text = IsFavorite and "💙" or "🤍"
-            FavBtn.TextSize = 14
-            FavBtn.Parent = card
-
-            FavBtn.MouseButton1Click:Connect(function()
-                IsFavorite = not IsFavorite
-                FavBtn.Text = IsFavorite and "💙" or "🤍"
-                card.LayoutOrder = IsFavorite and 0 or 10
-                CollieLib:Notify({ Title = "Favoritos", Content = IsFavorite and (Name .. " adicionado aos favoritos! 🐾") or (Name .. " removido!"), Duration = 2 })
-            end)
-
-            local title = Instance.new("TextLabel")
-            title.Size = UDim2.new(1, -12, 0, 40)
-            title.Position = UDim2.new(0, 6, 0.5, 15)
-            title.BackgroundTransparency = 1
-            title.Text = Name
-            title.TextColor3 = BLUE_PALETTE.TextLight
-            title.TextSize = 11
-            title.Font = Enum.Font.FredokaOne
-            title.TextWrapped = true
-            title.Parent = card
-
-            card.MouseButton1Click:Connect(function()
-                if cardDisabled then
-                    CollieLib:Notify({ Title = "Ops!", Content = "Este jogo está " .. string.upper(CardTag) .. "!", Duration = 2 })
-                    return
-                end
-                task.spawn(Callback)
-            end)
-
-            table.insert(TabObj.SearchItems, { Name = Name, Instance = card })
-            return { Card = card }
-        end
+        ---------------------------------------------------------
+        -- ELEMENTOS DA ABA (COMPONENTES)
+        ---------------------------------------------------------
 
         -- SEÇÃO
-        function TabObj:CreateSection(secConfig)
-            local titleText = type(secConfig) == "string" and secConfig or (secConfig.Name or "Seção")
+        function TabObj:CreateSection(text)
             local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(1, -15, 0, 22)
+            Label.Size = UDim2.new(1, 0, 0, 24)
             Label.BackgroundTransparency = 1
-            Label.Text = "✨ " .. titleText
-            Label.TextColor3 = BLUE_PALETTE.Secondary
+            Label.Text = "✨ " .. text
+            Label.TextColor3 = THEME.AccentSecondary
             Label.TextSize = 13
             Label.Font = Enum.Font.FredokaOne
             Label.TextXAlignment = Enum.TextXAlignment.Left
@@ -548,90 +383,94 @@ function CollieLib:CreateWindow(config)
             return Label
         end
 
-        -- TOGGLE
-        function TabObj:CreateToggle(tglConfig)
-            tglConfig = tglConfig or {}
-            local Name = tglConfig.Name or "Toggle"
-            local State = tglConfig.Default or false
-            local Callback = tglConfig.Callback or function() end
-
-            local Frame = Instance.new("Frame")
-            Frame.Size = UDim2.new(1, -10, 0, 42)
-            Frame.BackgroundColor3 = BLUE_PALETTE.CardBackground
-            Frame.Parent = TabPage
-            AddCorner(Frame, 14)
-
-            local FrameStroke = Instance.new("UIStroke")
-            FrameStroke.Color = BLUE_PALETTE.Border
-            FrameStroke.Thickness = 1.5
-            FrameStroke.Parent = Frame
-
-            local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(1, -60, 1, 0)
-            Label.Position = UDim2.new(0, 12, 0, 0)
-            Label.BackgroundTransparency = 1
-            Label.Text = Name
-            Label.TextColor3 = BLUE_PALETTE.TextLight
-            Label.TextSize = 12
-            Label.Font = Enum.Font.FredokaOne
-            Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.Parent = Frame
-
-            local Switch = Instance.new("TextButton")
-            Switch.Size = UDim2.new(0, 38, 0, 20)
-            Switch.Position = UDim2.new(1, -48, 0.5, -10)
-            Switch.BackgroundColor3 = State and BLUE_PALETTE.Primary or Color3.fromRGB(50, 60, 85)
-            Switch.Text = ""
-            Switch.Parent = Frame
-            AddCorner(Switch, 10)
-
-            local Indicator = Instance.new("Frame")
-            Indicator.Size = UDim2.new(0, 14, 0, 14)
-            Indicator.Position = State and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
-            Indicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Indicator.Parent = Switch
-            AddCorner(Indicator, 7)
-
-            local function SetState(val)
-                State = val
-                Tween(Indicator, {0.2, Enum.EasingStyle.Back}, {Position = State and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)})
-                Tween(Switch, {0.2}, {BackgroundColor3 = State and BLUE_PALETTE.Primary or Color3.fromRGB(50, 60, 85)})
-                task.spawn(Callback, State)
-            end
-
-            Switch.MouseButton1Click:Connect(function() SetState(not State) end)
-            table.insert(TabObj.SearchItems, { Name = Name, Instance = Frame })
-            return { Set = SetState, Get = function() return State end }
-        end
-
-        -- BOTÃO COM GRADIENTE AZUL
+        -- BUTTON (COM ANIMAÇÃO DE PULSAÇÃO)
         function TabObj:CreateButton(btnConfig)
             btnConfig = btnConfig or {}
             local Name = btnConfig.Name or "Botão"
             local Callback = btnConfig.Callback or function() end
 
             local Btn = Instance.new("TextButton")
-            Btn.Size = UDim2.new(1, -10, 0, 38)
-            Btn.BackgroundColor3 = BLUE_PALETTE.Primary
+            Btn.Size = UDim2.new(1, -10, 0, 40)
+            Btn.BackgroundColor3 = THEME.Accent
             Btn.Text = Name .. " 🐾"
             Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             Btn.TextSize = 13
             Btn.Font = Enum.Font.FredokaOne
             Btn.Parent = TabPage
             AddCorner(Btn, 14)
+            AddBlueGradient(Btn)
 
-            AddBlueGradient(Btn, BLUE_PALETTE.Primary, BLUE_PALETTE.PrimaryDark, 90)
-            AddCuteHover(Btn)
+            Btn.MouseButton1Down:Connect(function()
+                Tween(Btn, {0.1, Enum.EasingStyle.Quad}, {Size = UDim2.new(1, -16, 0, 36)})
+            end)
 
-            Btn.MouseButton1Click:Connect(function() task.spawn(Callback) end)
-            table.insert(TabObj.SearchItems, { Name = Name, Instance = Btn })
+            Btn.MouseButton1Up:Connect(function()
+                Tween(Btn, {0.1, Enum.EasingStyle.Quad}, {Size = UDim2.new(1, -10, 0, 40)})
+                task.spawn(Callback)
+            end)
+
             return Btn
         end
 
-        -- SLIDER
+        -- TOGGLE (COM SALVAMENTO DE STATE)
+        function TabObj:CreateToggle(tglConfig)
+            tglConfig = tglConfig or {}
+            local Name = tglConfig.Name or "Toggle"
+            local Flag = tglConfig.Flag or Name
+            local State = tglConfig.Default or false
+            local Callback = tglConfig.Callback or function() end
+
+            local Frame = Instance.new("Frame")
+            Frame.Size = UDim2.new(1, -10, 0, 42)
+            Frame.BackgroundColor3 = THEME.Card
+            Frame.Parent = TabPage
+            AddCorner(Frame, 14)
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(1, -60, 1, 0)
+            Label.Position = UDim2.new(0, 14, 0, 0)
+            Label.BackgroundTransparency = 1
+            Label.Text = Name
+            Label.TextColor3 = THEME.TextMain
+            Label.TextSize = 12
+            Label.Font = Enum.Font.FredokaOne
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = Frame
+
+            local Switch = Instance.new("TextButton")
+            Switch.Size = UDim2.new(0, 40, 0, 22)
+            Switch.Position = UDim2.new(1, -50, 0.5, -11)
+            Switch.BackgroundColor3 = State and THEME.Accent or THEME.Disabled
+            Switch.Text = ""
+            Switch.Parent = Frame
+            AddCorner(Switch, 12)
+
+            local Knob = Instance.new("Frame")
+            Knob.Size = UDim2.new(0, 16, 0, 16)
+            Knob.Position = State and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+            Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Knob.Parent = Switch
+            AddCorner(Knob, 10)
+
+            local function SetState(val)
+                State = val
+                Tween(Knob, {0.2, Enum.EasingStyle.Back}, {Position = State and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)})
+                Tween(Switch, {0.2}, {BackgroundColor3 = State and THEME.Accent or THEME.Disabled})
+                CollieLib.Flags[Flag] = { Value = State, Set = SetState }
+                task.spawn(Callback, State)
+            end
+
+            Switch.MouseButton1Click:Connect(function() SetState(not State) end)
+            CollieLib.Flags[Flag] = { Value = State, Set = SetState }
+
+            return { Set = SetState }
+        end
+
+        -- SLIDER (COM SALVAMENTO DE STATE)
         function TabObj:CreateSlider(sliderConfig)
             sliderConfig = sliderConfig or {}
             local Name = sliderConfig.Name or "Slider"
+            local Flag = sliderConfig.Flag or Name
             local Min = sliderConfig.Min or 0
             local Max = sliderConfig.Max or 100
             local Default = sliderConfig.Default or Min
@@ -641,79 +480,77 @@ function CollieLib:CreateWindow(config)
 
             local Frame = Instance.new("Frame")
             Frame.Size = UDim2.new(1, -10, 0, 48)
-            Frame.BackgroundColor3 = BLUE_PALETTE.CardBackground
+            Frame.BackgroundColor3 = THEME.Card
             Frame.Parent = TabPage
             AddCorner(Frame, 14)
 
-            local FrameStroke = Instance.new("UIStroke")
-            FrameStroke.Color = BLUE_PALETTE.Border
-            FrameStroke.Thickness = 1.5
-            FrameStroke.Parent = Frame
-
             local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(1, -80, 0, 18)
-            Label.Position = UDim2.new(0, 12, 0, 6)
+            Label.Size = UDim2.new(1, -80, 0, 20)
+            Label.Position = UDim2.new(0, 14, 0, 6)
             Label.BackgroundTransparency = 1
             Label.Text = Name
-            Label.TextColor3 = BLUE_PALETTE.TextLight
+            Label.TextColor3 = THEME.TextMain
             Label.TextSize = 12
             Label.Font = Enum.Font.FredokaOne
             Label.TextXAlignment = Enum.TextXAlignment.Left
             Label.Parent = Frame
 
             local ValueLabel = Instance.new("TextLabel")
-            ValueLabel.Size = UDim2.new(0, 60, 0, 18)
-            ValueLabel.Position = UDim2.new(1, -72, 0, 6)
+            ValueLabel.Size = UDim2.new(0, 60, 0, 20)
+            ValueLabel.Position = UDim2.new(1, -74, 0, 6)
             ValueLabel.BackgroundTransparency = 1
             ValueLabel.Text = tostring(Value)
-            ValueLabel.TextColor3 = BLUE_PALETTE.Secondary
-            ValueLabel.TextSize = 11
+            ValueLabel.TextColor3 = THEME.AccentSecondary
+            ValueLabel.TextSize = 12
             ValueLabel.Font = Enum.Font.FredokaOne
             ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
             ValueLabel.Parent = Frame
 
-            local SliderTrack = Instance.new("TextButton")
-            SliderTrack.Size = UDim2.new(1, -24, 0, 8)
-            SliderTrack.Position = UDim2.new(0, 12, 0, 30)
-            SliderTrack.BackgroundColor3 = Color3.fromRGB(24, 32, 54)
-            SliderTrack.Text = ""
-            SliderTrack.Parent = Frame
-            AddCorner(SliderTrack, 4)
+            local Track = Instance.new("TextButton")
+            Track.Size = UDim2.new(1, -28, 0, 8)
+            Track.Position = UDim2.new(0, 14, 0, 32)
+            Track.BackgroundColor3 = THEME.Background
+            Track.Text = ""
+            Track.Parent = Frame
+            AddCorner(Track, 6)
 
-            local SliderFill = Instance.new("Frame")
-            SliderFill.Size = UDim2.new((Value - Min) / (Max - Min), 0, 1, 0)
-            SliderFill.BackgroundColor3 = BLUE_PALETTE.Primary
-            SliderFill.Parent = SliderTrack
-            AddCorner(SliderFill, 4)
+            local Fill = Instance.new("Frame")
+            Fill.Size = UDim2.new((Value - Min) / (Max - Min), 0, 1, 0)
+            Fill.BackgroundColor3 = THEME.Accent
+            Fill.Parent = Track
+            AddCorner(Fill, 6)
+            AddBlueGradient(Fill)
 
-            AddBlueGradient(SliderFill, BLUE_PALETTE.Primary, BLUE_PALETTE.PrimaryDark, 0)
-
-            local function UpdateSlider(input)
-                local percent = math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
-                Value = math.floor(Min + (Max - Min) * percent)
+            local function SetValue(newVal)
+                Value = math.clamp(math.floor(newVal), Min, Max)
                 ValueLabel.Text = tostring(Value)
-                SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+                Fill.Size = UDim2.new((Value - Min) / (Max - Min), 0, 1, 0)
+                CollieLib.Flags[Flag] = { Value = Value, Set = SetValue }
                 task.spawn(Callback, Value)
             end
 
             local isDragging = false
-            SliderTrack.InputBegan:Connect(function(input)
+            Track.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     isDragging = true
-                    UpdateSlider(input)
+                    local pct = math.clamp((input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+                    SetValue(Min + (Max - Min) * pct)
                 end
             end)
 
             UserInputService.InputChanged:Connect(function(input)
-                if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then UpdateSlider(input) end
+                if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local pct = math.clamp((input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+                    SetValue(Min + (Max - Min) * pct)
+                end
             end)
 
             UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then isDragging = false end
             end)
 
-            table.insert(TabObj.SearchItems, { Name = Name, Instance = Frame })
-            return { Get = function() return Value end }
+            CollieLib.Flags[Flag] = { Value = Value, Set = SetValue }
+            return { Set = SetValue }
         end
 
         return TabObj
