@@ -1,7 +1,7 @@
 --[[
-    COLLIELIB v1.0 🐾✨
-    Design: Cute Cartoon / Pastel Bubble Edition
-    Cores suaves, cantos arredondados e visual fofo!
+    COLLIELIB v1.1 🐾✨
+    Design: Cute Cartoon / Blue Gradient Edition
+    Tema: Azul Escuro & Azul Claro Pastel
 --]]
 
 local CollieLib = {}
@@ -12,21 +12,21 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
 
--- PALETA DE CORES FOFA (PASTEL)
-local PASTEL_PALETTE = {
-    Background = Color3.fromRGB(250, 243, 240),      -- Creme pastel claro
-    CardBackground = Color3.fromRGB(255, 255, 255),  -- Branco puro para os cards
-    Primary = Color3.fromRGB(255, 154, 162),         -- Rosa Pastel fofo
-    Secondary = Color3.fromRGB(224, 187, 228),       -- Lilás Pastel
-    Accent = Color3.fromRGB(255, 218, 193),          -- Pêssego Pastel
-    TextDark = Color3.fromRGB(80, 70, 85),           -- Cinza arroxeado escuro (mais suave que preto)
-    TextMuted = Color3.fromRGB(150, 140, 155),       -- Texto secundário
-    Border = Color3.fromRGB(240, 225, 230)           -- Borda suave
+-- PALETA DE CORES (AZUL ESCURO & AZUL CLARO CARTOON)
+local BLUE_PALETTE = {
+    Background = Color3.fromRGB(26, 34, 56),       -- Azul Escuro Noturno
+    CardBackground = Color3.fromRGB(38, 49, 78),   -- Azul Escuro Médio (Cards)
+    Primary = Color3.fromRGB(79, 172, 254),        -- Azul Bebê Vibrante
+    PrimaryDark = Color3.fromRGB(0, 242, 254),     -- Azul Ciano Pastel
+    Secondary = Color3.fromRGB(142, 197, 252),     -- Azul Claro Pastel
+    TextLight = Color3.fromRGB(240, 245, 255),     -- Texto Claro
+    TextMuted = Color3.fromRGB(160, 180, 210),     -- Texto Secundário Azulado
+    Border = Color3.fromRGB(60, 80, 120),          -- Borda Suave
+    AccentBadge = Color3.fromRGB(255, 183, 178)    -- Destaque Pastel
 }
 
 -- Auxiliar de Animação (Tween)
@@ -36,7 +36,7 @@ local function Tween(instance, info, properties)
     return tween
 end
 
--- Auxiliar de Canto Arredondado (Estilo Cartoon)
+-- Auxiliar de Canto Arredondado (Cartoon)
 local function AddCorner(parent, radius)
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, radius or 16)
@@ -44,19 +44,31 @@ local function AddCorner(parent, radius)
     return corner
 end
 
--- MAPA DE CORES DAS TAGS (Tons Pastéis)
+-- Auxiliar de Gradiente Azul
+local function AddBlueGradient(parent, colorStart, colorEnd, rotation)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, colorStart or BLUE_PALETTE.Primary),
+        ColorSequenceKeypoint.new(1, colorEnd or BLUE_PALETTE.PrimaryDark)
+    })
+    gradient.Rotation = rotation or 45
+    gradient.Parent = parent
+    return gradient
+end
+
+-- MAPA DE CORES DAS TAGS
 local TAG_COLORS = {
     BETA = Color3.fromRGB(255, 183, 178),
     ATUALIZANDO = Color3.fromRGB(181, 234, 215),
     REMOVIDO = Color3.fromRGB(199, 206, 234),
     BLOQUEADO = Color3.fromRGB(255, 154, 162),
-    NOVO = Color3.fromRGB(226, 240, 203)
+    NOVO = Color3.fromRGB(160, 231, 229)
 }
 
 -- Auxiliar para Criar Tag Visual (Badge Cartoon)
 local function CreateBadge(parent, tagType, position, anchorPoint)
     tagType = string.upper(tostring(tagType or ""))
-    local tagColor = TAG_COLORS[tagType] or PASTEL_PALETTE.Primary
+    local tagColor = TAG_COLORS[tagType] or BLUE_PALETTE.Primary
 
     local badge = Instance.new("Frame")
     badge.Name = "Badge_" .. tagType
@@ -83,7 +95,7 @@ local function CreateBadge(parent, tagType, position, anchorPoint)
     return badge
 end
 
--- SISTEMA DE NOTIFICAÇÕES (Estilo Card Fofo)
+-- SISTEMA DE NOTIFICAÇÕES (Estilo Card Cartoon Azul)
 local NotificationGui
 local NotificationContainer
 
@@ -122,14 +134,14 @@ function CollieLib:Notify(config)
 
     local card = Instance.new("Frame")
     card.Size = UDim2.new(1, 0, 0, 65)
-    card.BackgroundColor3 = PASTEL_PALETTE.CardBackground
+    card.BackgroundColor3 = BLUE_PALETTE.CardBackground
     card.Position = UDim2.new(1, 320, 0, 0)
     card.Parent = NotificationContainer
 
     AddCorner(card, 16)
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = PASTEL_PALETTE.Primary
+    stroke.Color = BLUE_PALETTE.Primary
     stroke.Thickness = 2
     stroke.Parent = card
 
@@ -137,7 +149,7 @@ function CollieLib:Notify(config)
     title.Text = "🐾 " .. titleText
     title.Font = Enum.Font.FredokaOne
     title.TextSize = 14
-    title.TextColor3 = PASTEL_PALETTE.TextDark
+    title.TextColor3 = BLUE_PALETTE.Secondary
     title.Position = UDim2.new(0, 12, 0, 8)
     title.Size = UDim2.new(1, -24, 0, 18)
     title.TextXAlignment = Enum.TextXAlignment.Left
@@ -148,7 +160,7 @@ function CollieLib:Notify(config)
     content.Text = contentText
     content.Font = Enum.Font.GothamMedium
     content.TextSize = 11
-    content.TextColor3 = PASTEL_PALETTE.TextMuted
+    content.TextColor3 = BLUE_PALETTE.TextLight
     content.Position = UDim2.new(0, 12, 0, 28)
     content.Size = UDim2.new(1, -24, 0, 30)
     content.TextXAlignment = Enum.TextXAlignment.Left
@@ -170,8 +182,7 @@ end
 function CollieLib:CreateWindow(config)
     config = config or {}
     local TitleText = config.Title or "Collie Hub"
-    local SubTitleText = config.SubTitle or "Cute & Kawaii Edition 🐾"
-    local PrimaryColor = config.PrimaryColor or PASTEL_PALETTE.Primary
+    local SubTitleText = config.SubTitle or "Blue Gradient Edition 🐾"
     local ToggleKey = config.ToggleKey or Enum.KeyCode.LeftControl
 
     local ScreenGui = Instance.new("ScreenGui")
@@ -184,18 +195,18 @@ function CollieLib:CreateWindow(config)
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, 780, 0, 480)
     MainFrame.Position = UDim2.new(0.5, -390, 0.5, -240)
-    MainFrame.BackgroundColor3 = PASTEL_PALETTE.Background
+    MainFrame.BackgroundColor3 = BLUE_PALETTE.Background
     MainFrame.Active = true
     MainFrame.Parent = ScreenGui
     AddCorner(MainFrame, 20)
 
-    -- Borda Externa Fofa (Stroke Arredondado)
+    -- Borda Externa Fofa com Gradiente
     local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = PrimaryColor
+    MainStroke.Color = BLUE_PALETTE.Secondary
     MainStroke.Thickness = 3
     MainStroke.Parent = MainFrame
 
-    -- Auxiliar para dar efeito de "bounce" nos botões
+    -- Efeito Hover para Botões Cartoon
     local function AddCuteHover(button)
         button.MouseEnter:Connect(function()
             Tween(button, {0.15, Enum.EasingStyle.Quad}, {Size = UDim2.new(button.Size.X.Scale, button.Size.X.Offset, button.Size.Y.Scale, button.Size.Y.Offset + 2)})
@@ -239,7 +250,7 @@ function CollieLib:CreateWindow(config)
         end
     end)
 
-    -- Sidebar (Painel Esquerdo Pastel)
+    -- Sidebar (Painel Esquerdo)
     local Sidebar = Instance.new("Frame")
     Sidebar.Name = "Sidebar"
     Sidebar.Size = UDim2.new(0, 190, 1, 0)
@@ -250,7 +261,7 @@ function CollieLib:CreateWindow(config)
     HubTitle.Text = "🐾 " .. TitleText
     HubTitle.Font = Enum.Font.FredokaOne
     HubTitle.TextSize = 18
-    HubTitle.TextColor3 = PASTEL_PALETTE.TextDark
+    HubTitle.TextColor3 = BLUE_PALETTE.Secondary
     HubTitle.Position = UDim2.new(0, 18, 0, 25)
     HubTitle.Size = UDim2.new(1, -20, 0, 22)
     HubTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -261,7 +272,7 @@ function CollieLib:CreateWindow(config)
     HubSub.Text = SubTitleText
     HubSub.Font = Enum.Font.GothamMedium
     HubSub.TextSize = 11
-    HubSub.TextColor3 = PASTEL_PALETTE.TextMuted
+    HubSub.TextColor3 = BLUE_PALETTE.TextMuted
     HubSub.Position = UDim2.new(0, 18, 0, 48)
     HubSub.Size = UDim2.new(1, -20, 0, 15)
     HubSub.TextXAlignment = Enum.TextXAlignment.Left
@@ -289,7 +300,7 @@ function CollieLib:CreateWindow(config)
     SectionTitle.Size = UDim2.new(0, 250, 0, 30)
     SectionTitle.BackgroundTransparency = 1
     SectionTitle.Text = "Menu"
-    SectionTitle.TextColor3 = PASTEL_PALETTE.TextDark
+    SectionTitle.TextColor3 = BLUE_PALETTE.TextLight
     SectionTitle.TextSize = 20
     SectionTitle.Font = Enum.Font.FredokaOne
     SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -298,10 +309,10 @@ function CollieLib:CreateWindow(config)
     local SearchBox = Instance.new("TextBox")
     SearchBox.Size = UDim2.new(0, 200, 0, 32)
     SearchBox.Position = UDim2.new(1, -200, 0, 0)
-    SearchBox.BackgroundColor3 = PASTEL_PALETTE.CardBackground
+    SearchBox.BackgroundColor3 = BLUE_PALETTE.CardBackground
     SearchBox.PlaceholderText = "Pesquisar... ✨"
-    SearchBox.PlaceholderColor3 = PASTEL_PALETTE.TextMuted
-    SearchBox.TextColor3 = PASTEL_PALETTE.TextDark
+    SearchBox.PlaceholderColor3 = BLUE_PALETTE.TextMuted
+    SearchBox.TextColor3 = BLUE_PALETTE.TextLight
     SearchBox.TextSize = 12
     SearchBox.Font = Enum.Font.GothamMedium
     SearchBox.TextXAlignment = Enum.TextXAlignment.Left
@@ -309,7 +320,7 @@ function CollieLib:CreateWindow(config)
     AddCorner(SearchBox, 12)
 
     local SearchStroke = Instance.new("UIStroke")
-    SearchStroke.Color = PASTEL_PALETTE.Border
+    SearchStroke.Color = BLUE_PALETTE.Border
     SearchStroke.Thickness = 1.5
     SearchStroke.Parent = SearchBox
 
@@ -328,7 +339,6 @@ function CollieLib:CreateWindow(config)
         MainFrame = MainFrame,
         Tabs = {},
         ActiveTab = nil,
-        PrimaryColor = PrimaryColor,
         SetToggleKey = function(self, newKey) ToggleKey = newKey end,
         ToggleUI = function(self) SetUIVisibility(not IsVisible) end,
         Destroy = function(self) ScreenGui:Destroy() end
@@ -344,10 +354,10 @@ function CollieLib:CreateWindow(config)
 
         local NavBtn = Instance.new("TextButton")
         NavBtn.Size = UDim2.new(1, 0, 0, 36)
-        NavBtn.BackgroundColor3 = PASTEL_PALETTE.CardBackground
-        NavBtn.BackgroundTransparency = 0.5
+        NavBtn.BackgroundColor3 = BLUE_PALETTE.CardBackground
+        NavBtn.BackgroundTransparency = 0.3
         NavBtn.Text = "  " .. TabName
-        NavBtn.TextColor3 = PASTEL_PALETTE.TextMuted
+        NavBtn.TextColor3 = BLUE_PALETTE.TextMuted
         NavBtn.TextSize = 13
         NavBtn.Font = Enum.Font.FredokaOne
         NavBtn.TextXAlignment = Enum.TextXAlignment.Left
@@ -356,7 +366,7 @@ function CollieLib:CreateWindow(config)
         AddCorner(NavBtn, 12)
 
         local TabStroke = Instance.new("UIStroke")
-        TabStroke.Color = PASTEL_PALETTE.Border
+        TabStroke.Color = BLUE_PALETTE.Border
         TabStroke.Thickness = 1
         TabStroke.Parent = NavBtn
 
@@ -380,7 +390,7 @@ function CollieLib:CreateWindow(config)
             TabPage.Size = UDim2.new(1, -10, 0, 180)
             TabPage.Position = UDim2.new(0, 5, 0, 5)
             TabPage.ScrollBarThickness = 4
-            TabPage.ScrollBarImageColor3 = PrimaryColor
+            TabPage.ScrollBarImageColor3 = BLUE_PALETTE.Secondary
             TabPage.ScrollingDirection = Enum.ScrollingDirection.X
             TabPage.ClipsDescendants = true
 
@@ -402,7 +412,7 @@ function CollieLib:CreateWindow(config)
         else
             TabPage.Size = UDim2.new(1, 0, 1, 0)
             TabPage.ScrollBarThickness = 4
-            TabPage.ScrollBarImageColor3 = PASTEL_PALETTE.Secondary
+            TabPage.ScrollBarImageColor3 = BLUE_PALETTE.Secondary
             TabPage.ScrollingDirection = Enum.ScrollingDirection.Y
 
             local listLayout = Instance.new("UIListLayout")
@@ -424,12 +434,12 @@ function CollieLib:CreateWindow(config)
 
             for _, t in pairs(WindowObj.Tabs) do
                 t.Page.Visible = false
-                Tween(t.Button, {0.2}, {BackgroundColor3 = PASTEL_PALETTE.CardBackground, BackgroundTransparency = 0.5, TextColor3 = PASTEL_PALETTE.TextMuted})
+                Tween(t.Button, {0.2}, {BackgroundColor3 = BLUE_PALETTE.CardBackground, BackgroundTransparency = 0.3, TextColor3 = BLUE_PALETTE.TextMuted})
             end
 
             TabPage.Visible = true
             SectionTitle.Text = TabName
-            Tween(NavBtn, {0.2}, {BackgroundColor3 = PrimaryColor, BackgroundTransparency = 0, TextColor3 = Color3.fromRGB(255, 255, 255)})
+            Tween(NavBtn, {0.2}, {BackgroundColor3 = BLUE_PALETTE.Primary, BackgroundTransparency = 0, TextColor3 = Color3.fromRGB(255, 255, 255)})
             WindowObj.ActiveTab = TabObj
         end
 
@@ -450,7 +460,7 @@ function CollieLib:CreateWindow(config)
 
         -- COMPONENTES DA ABA
 
-        -- CARD DE JOGO (Estilo Card Fofo)
+        -- CARD DE JOGO (Gradiente Azul Fofo)
         function TabObj:CreateGameCard(cardConfig)
             cardConfig = cardConfig or {}
             local Name = cardConfig.Name or "Jogo"
@@ -463,14 +473,16 @@ function CollieLib:CreateWindow(config)
             local card = Instance.new("TextButton")
             card.Name = Name
             card.Size = UDim2.new(0, 110, 0, 140)
-            card.BackgroundColor3 = PASTEL_PALETTE.CardBackground
+            card.BackgroundColor3 = BLUE_PALETTE.CardBackground
             card.Text = ""
             card.LayoutOrder = IsFavorite and 0 or 10
             card.Parent = parentFrame
             AddCorner(card, 16)
 
+            local cardGradient = AddBlueGradient(card, BLUE_PALETTE.CardBackground, Color3.fromRGB(48, 62, 98), 45)
+
             local cardStroke = Instance.new("UIStroke")
-            cardStroke.Color = PASTEL_PALETTE.Border
+            cardStroke.Color = BLUE_PALETTE.Border
             cardStroke.Thickness = 1.5
             cardStroke.Parent = card
 
@@ -483,18 +495,18 @@ function CollieLib:CreateWindow(config)
                 if upperTag == "BLOQUEADO" or upperTag == "REMOVIDO" then cardDisabled = true end
             end
 
-            -- Botão Favorito (Patas/Estrelas)
+            -- Botão Favorito
             local FavBtn = Instance.new("TextButton")
             FavBtn.Size = UDim2.new(0, 22, 0, 22)
             FavBtn.Position = UDim2.new(1, -24, 0, 4)
             FavBtn.BackgroundTransparency = 1
-            FavBtn.Text = IsFavorite and "💖" or "🤍"
+            FavBtn.Text = IsFavorite and "💙" or "🤍"
             FavBtn.TextSize = 14
             FavBtn.Parent = card
 
             FavBtn.MouseButton1Click:Connect(function()
                 IsFavorite = not IsFavorite
-                FavBtn.Text = IsFavorite and "💖" or "🤍"
+                FavBtn.Text = IsFavorite and "💙" or "🤍"
                 card.LayoutOrder = IsFavorite and 0 or 10
                 CollieLib:Notify({ Title = "Favoritos", Content = IsFavorite and (Name .. " adicionado aos favoritos! 🐾") or (Name .. " removido!"), Duration = 2 })
             end)
@@ -504,7 +516,7 @@ function CollieLib:CreateWindow(config)
             title.Position = UDim2.new(0, 6, 0.5, 15)
             title.BackgroundTransparency = 1
             title.Text = Name
-            title.TextColor3 = PASTEL_PALETTE.TextDark
+            title.TextColor3 = BLUE_PALETTE.TextLight
             title.TextSize = 11
             title.Font = Enum.Font.FredokaOne
             title.TextWrapped = true
@@ -529,7 +541,7 @@ function CollieLib:CreateWindow(config)
             Label.Size = UDim2.new(1, -15, 0, 22)
             Label.BackgroundTransparency = 1
             Label.Text = "✨ " .. titleText
-            Label.TextColor3 = PrimaryColor
+            Label.TextColor3 = BLUE_PALETTE.Secondary
             Label.TextSize = 13
             Label.Font = Enum.Font.FredokaOne
             Label.TextXAlignment = Enum.TextXAlignment.Left
@@ -546,12 +558,12 @@ function CollieLib:CreateWindow(config)
 
             local Frame = Instance.new("Frame")
             Frame.Size = UDim2.new(1, -10, 0, 42)
-            Frame.BackgroundColor3 = PASTEL_PALETTE.CardBackground
+            Frame.BackgroundColor3 = BLUE_PALETTE.CardBackground
             Frame.Parent = TabPage
             AddCorner(Frame, 14)
 
             local FrameStroke = Instance.new("UIStroke")
-            FrameStroke.Color = PASTEL_PALETTE.Border
+            FrameStroke.Color = BLUE_PALETTE.Border
             FrameStroke.Thickness = 1.5
             FrameStroke.Parent = Frame
 
@@ -560,7 +572,7 @@ function CollieLib:CreateWindow(config)
             Label.Position = UDim2.new(0, 12, 0, 0)
             Label.BackgroundTransparency = 1
             Label.Text = Name
-            Label.TextColor3 = PASTEL_PALETTE.TextDark
+            Label.TextColor3 = BLUE_PALETTE.TextLight
             Label.TextSize = 12
             Label.Font = Enum.Font.FredokaOne
             Label.TextXAlignment = Enum.TextXAlignment.Left
@@ -569,7 +581,7 @@ function CollieLib:CreateWindow(config)
             local Switch = Instance.new("TextButton")
             Switch.Size = UDim2.new(0, 38, 0, 20)
             Switch.Position = UDim2.new(1, -48, 0.5, -10)
-            Switch.BackgroundColor3 = State and PrimaryColor or Color3.fromRGB(220, 215, 225)
+            Switch.BackgroundColor3 = State and BLUE_PALETTE.Primary or Color3.fromRGB(50, 60, 85)
             Switch.Text = ""
             Switch.Parent = Frame
             AddCorner(Switch, 10)
@@ -584,7 +596,7 @@ function CollieLib:CreateWindow(config)
             local function SetState(val)
                 State = val
                 Tween(Indicator, {0.2, Enum.EasingStyle.Back}, {Position = State and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)})
-                Tween(Switch, {0.2}, {BackgroundColor3 = State and PrimaryColor or Color3.fromRGB(220, 215, 225)})
+                Tween(Switch, {0.2}, {BackgroundColor3 = State and BLUE_PALETTE.Primary or Color3.fromRGB(50, 60, 85)})
                 task.spawn(Callback, State)
             end
 
@@ -593,7 +605,7 @@ function CollieLib:CreateWindow(config)
             return { Set = SetState, Get = function() return State end }
         end
 
-        -- BOTÃO
+        -- BOTÃO COM GRADIENTE AZUL
         function TabObj:CreateButton(btnConfig)
             btnConfig = btnConfig or {}
             local Name = btnConfig.Name or "Botão"
@@ -601,7 +613,7 @@ function CollieLib:CreateWindow(config)
 
             local Btn = Instance.new("TextButton")
             Btn.Size = UDim2.new(1, -10, 0, 38)
-            Btn.BackgroundColor3 = PrimaryColor
+            Btn.BackgroundColor3 = BLUE_PALETTE.Primary
             Btn.Text = Name .. " 🐾"
             Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             Btn.TextSize = 13
@@ -609,6 +621,7 @@ function CollieLib:CreateWindow(config)
             Btn.Parent = TabPage
             AddCorner(Btn, 14)
 
+            AddBlueGradient(Btn, BLUE_PALETTE.Primary, BLUE_PALETTE.PrimaryDark, 90)
             AddCuteHover(Btn)
 
             Btn.MouseButton1Click:Connect(function() task.spawn(Callback) end)
@@ -629,12 +642,12 @@ function CollieLib:CreateWindow(config)
 
             local Frame = Instance.new("Frame")
             Frame.Size = UDim2.new(1, -10, 0, 48)
-            Frame.BackgroundColor3 = PASTEL_PALETTE.CardBackground
+            Frame.BackgroundColor3 = BLUE_PALETTE.CardBackground
             Frame.Parent = TabPage
             AddCorner(Frame, 14)
 
             local FrameStroke = Instance.new("UIStroke")
-            FrameStroke.Color = PASTEL_PALETTE.Border
+            FrameStroke.Color = BLUE_PALETTE.Border
             FrameStroke.Thickness = 1.5
             FrameStroke.Parent = Frame
 
@@ -643,7 +656,7 @@ function CollieLib:CreateWindow(config)
             Label.Position = UDim2.new(0, 12, 0, 6)
             Label.BackgroundTransparency = 1
             Label.Text = Name
-            Label.TextColor3 = PASTEL_PALETTE.TextDark
+            Label.TextColor3 = BLUE_PALETTE.TextLight
             Label.TextSize = 12
             Label.Font = Enum.Font.FredokaOne
             Label.TextXAlignment = Enum.TextXAlignment.Left
@@ -654,7 +667,7 @@ function CollieLib:CreateWindow(config)
             ValueLabel.Position = UDim2.new(1, -72, 0, 6)
             ValueLabel.BackgroundTransparency = 1
             ValueLabel.Text = tostring(Value)
-            ValueLabel.TextColor3 = PASTEL_PALETTE.TextMuted
+            ValueLabel.TextColor3 = BLUE_PALETTE.Secondary
             ValueLabel.TextSize = 11
             ValueLabel.Font = Enum.Font.FredokaOne
             ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
@@ -663,16 +676,18 @@ function CollieLib:CreateWindow(config)
             local SliderTrack = Instance.new("TextButton")
             SliderTrack.Size = UDim2.new(1, -24, 0, 8)
             SliderTrack.Position = UDim2.new(0, 12, 0, 30)
-            SliderTrack.BackgroundColor3 = Color3.fromRGB(235, 230, 240)
+            SliderTrack.BackgroundColor3 = Color3.fromRGB(28, 36, 58)
             SliderTrack.Text = ""
             SliderTrack.Parent = Frame
             AddCorner(SliderTrack, 4)
 
             local SliderFill = Instance.new("Frame")
             SliderFill.Size = UDim2.new((Value - Min) / (Max - Min), 0, 1, 0)
-            SliderFill.BackgroundColor3 = PrimaryColor
+            SliderFill.BackgroundColor3 = BLUE_PALETTE.Primary
             SliderFill.Parent = SliderTrack
             AddCorner(SliderFill, 4)
+
+            AddBlueGradient(SliderFill, BLUE_PALETTE.Primary, BLUE_PALETTE.PrimaryDark, 0)
 
             local function UpdateSlider(input)
                 local percent = math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
