@@ -1,7 +1,7 @@
 --[[
-    COLLIELIB v1.1 🐾✨
-    Design: Cute Cartoon / Blue Gradient Edition
-    Tema: Azul Escuro & Azul Claro Pastel
+    COLLIELIB v1.2 🐾✨
+    Design: Cute Cartoon / Dark & Light Blue Edition
+    Fundo: Azul Escuro | Elementos: Azul Claro Pastel & Gradientes
 --]]
 
 local CollieLib = {}
@@ -16,17 +16,16 @@ local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
 
--- PALETA DE CORES (AZUL ESCURO & AZUL CLARO CARTOON)
+-- PALETA DE CORES (AZUL ESCURO & AZUL CLARO)
 local BLUE_PALETTE = {
-    Background = Color3.fromRGB(26, 34, 56),       -- Azul Escuro Noturno
-    CardBackground = Color3.fromRGB(38, 49, 78),   -- Azul Escuro Médio (Cards)
-    Primary = Color3.fromRGB(79, 172, 254),        -- Azul Bebê Vibrante
-    PrimaryDark = Color3.fromRGB(0, 242, 254),     -- Azul Ciano Pastel
-    Secondary = Color3.fromRGB(142, 197, 252),     -- Azul Claro Pastel
-    TextLight = Color3.fromRGB(240, 245, 255),     -- Texto Claro
-    TextMuted = Color3.fromRGB(160, 180, 210),     -- Texto Secundário Azulado
-    Border = Color3.fromRGB(60, 80, 120),          -- Borda Suave
-    AccentBadge = Color3.fromRGB(255, 183, 178)    -- Destaque Pastel
+    Background = Color3.fromRGB(24, 32, 54),       -- Azul Escuro Noturno (Fundo Principal)
+    CardBackground = Color3.fromRGB(36, 46, 73),   -- Azul Escuro Médio (Cards e Caixas)
+    Primary = Color3.fromRGB(85, 170, 255),        -- Azul Claro Vibrante
+    PrimaryDark = Color3.fromRGB(0, 210, 255),     -- Azul Ciano Claro
+    Secondary = Color3.fromRGB(160, 210, 255),     -- Azul Bebê Pastel
+    TextLight = Color3.fromRGB(240, 248, 255),     -- Texto Claro/Branco
+    TextMuted = Color3.fromRGB(150, 180, 215),     -- Texto Secundário
+    Border = Color3.fromRGB(100, 180, 255)         -- Borda Azul Claro Destaque
 }
 
 -- Auxiliar de Animação (Tween)
@@ -58,11 +57,11 @@ end
 
 -- MAPA DE CORES DAS TAGS
 local TAG_COLORS = {
-    BETA = Color3.fromRGB(255, 183, 178),
-    ATUALIZANDO = Color3.fromRGB(181, 234, 215),
-    REMOVIDO = Color3.fromRGB(199, 206, 234),
-    BLOQUEADO = Color3.fromRGB(255, 154, 162),
-    NOVO = Color3.fromRGB(160, 231, 229)
+    BETA = Color3.fromRGB(120, 190, 255),
+    ATUALIZANDO = Color3.fromRGB(140, 235, 200),
+    REMOVIDO = Color3.fromRGB(180, 190, 230),
+    BLOQUEADO = Color3.fromRGB(255, 130, 130),
+    NOVO = Color3.fromRGB(130, 230, 220)
 }
 
 -- Auxiliar para Criar Tag Visual (Badge Cartoon)
@@ -141,7 +140,7 @@ function CollieLib:Notify(config)
     AddCorner(card, 16)
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = BLUE_PALETTE.Primary
+    stroke.Color = BLUE_PALETTE.Border
     stroke.Thickness = 2
     stroke.Parent = card
 
@@ -182,7 +181,7 @@ end
 function CollieLib:CreateWindow(config)
     config = config or {}
     local TitleText = config.Title or "Collie Hub"
-    local SubTitleText = config.SubTitle or "Blue Gradient Edition 🐾"
+    local SubTitleText = config.SubTitle or "Dark & Light Blue Edition 🐾"
     local ToggleKey = config.ToggleKey or Enum.KeyCode.LeftControl
 
     local ScreenGui = Instance.new("ScreenGui")
@@ -200,13 +199,13 @@ function CollieLib:CreateWindow(config)
     MainFrame.Parent = ScreenGui
     AddCorner(MainFrame, 20)
 
-    -- Borda Externa Fofa com Gradiente
+    -- Borda Azul Claro Destaque (Cartoon)
     local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = BLUE_PALETTE.Secondary
+    MainStroke.Color = BLUE_PALETTE.Border
     MainStroke.Thickness = 3
     MainStroke.Parent = MainFrame
 
-    -- Efeito Hover para Botões Cartoon
+    -- Efeito Hover nos Botões
     local function AddCuteHover(button)
         button.MouseEnter:Connect(function()
             Tween(button, {0.15, Enum.EasingStyle.Quad}, {Size = UDim2.new(button.Size.X.Scale, button.Size.X.Offset, button.Size.Y.Scale, button.Size.Y.Offset + 2)})
@@ -355,7 +354,7 @@ function CollieLib:CreateWindow(config)
         local NavBtn = Instance.new("TextButton")
         NavBtn.Size = UDim2.new(1, 0, 0, 36)
         NavBtn.BackgroundColor3 = BLUE_PALETTE.CardBackground
-        NavBtn.BackgroundTransparency = 0.3
+        NavBtn.BackgroundTransparency = 0.2
         NavBtn.Text = "  " .. TabName
         NavBtn.TextColor3 = BLUE_PALETTE.TextMuted
         NavBtn.TextSize = 13
@@ -434,7 +433,7 @@ function CollieLib:CreateWindow(config)
 
             for _, t in pairs(WindowObj.Tabs) do
                 t.Page.Visible = false
-                Tween(t.Button, {0.2}, {BackgroundColor3 = BLUE_PALETTE.CardBackground, BackgroundTransparency = 0.3, TextColor3 = BLUE_PALETTE.TextMuted})
+                Tween(t.Button, {0.2}, {BackgroundColor3 = BLUE_PALETTE.CardBackground, BackgroundTransparency = 0.2, TextColor3 = BLUE_PALETTE.TextMuted})
             end
 
             TabPage.Visible = true
@@ -460,7 +459,7 @@ function CollieLib:CreateWindow(config)
 
         -- COMPONENTES DA ABA
 
-        -- CARD DE JOGO (Gradiente Azul Fofo)
+        -- CARD DE JOGO
         function TabObj:CreateGameCard(cardConfig)
             cardConfig = cardConfig or {}
             local Name = cardConfig.Name or "Jogo"
@@ -479,7 +478,7 @@ function CollieLib:CreateWindow(config)
             card.Parent = parentFrame
             AddCorner(card, 16)
 
-            local cardGradient = AddBlueGradient(card, BLUE_PALETTE.CardBackground, Color3.fromRGB(48, 62, 98), 45)
+            AddBlueGradient(card, BLUE_PALETTE.CardBackground, Color3.fromRGB(48, 62, 98), 45)
 
             local cardStroke = Instance.new("UIStroke")
             cardStroke.Color = BLUE_PALETTE.Border
@@ -676,7 +675,7 @@ function CollieLib:CreateWindow(config)
             local SliderTrack = Instance.new("TextButton")
             SliderTrack.Size = UDim2.new(1, -24, 0, 8)
             SliderTrack.Position = UDim2.new(0, 12, 0, 30)
-            SliderTrack.BackgroundColor3 = Color3.fromRGB(28, 36, 58)
+            SliderTrack.BackgroundColor3 = Color3.fromRGB(24, 32, 54)
             SliderTrack.Text = ""
             SliderTrack.Parent = Frame
             AddCorner(SliderTrack, 4)
